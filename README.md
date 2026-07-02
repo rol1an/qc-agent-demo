@@ -26,9 +26,12 @@ uv venv --python 3.14 .venv && source .venv/bin/activate
 uv pip install numpy pandas networkx matplotlib
 
 cd src
-python run.py          # 端到端真闭环（默认 stub 后端，本地即可全跑通）
+python run.py          # 端到端真闭环 CLI（默认 stub 后端，本地即可全跑通）
 python plot.py         # 生成真实数据 SPC 控制图 → ../control_chart.png
+python server.py       # 可视化前端 → 浏览器打开 http://127.0.0.1:8000
 ```
+
+**可视化前端**（`server.py` + `static/`）是**真后端驱动的薄壳**：控制图画的是真实 SECOM 数据点、证据链子图是真实 NetworkX 检索结果、三态裁决是真 gate 输出、根因是真 LLM 输出——前端零造数据（数据流 = 后端真算 → 前端渲染，与"前端假装算"的玩具相反）。零外部依赖（纯手写 canvas + SVG），后端仅用 Python 标准库。
 
 接**真实 LLM**（除下述环境变量外，代码零改动。key 只走环境变量，切勿写进文件）：
 

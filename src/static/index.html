@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>质量风险自主管控 AI 数字员工 · 真实数据驱动可视化</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2230;--line:#2b3444;--txt:#e6edf3;--muted:#9aa7b8;
+    --accent:#4c9aff;--ok:#3fb950;--warn:#f0883e;--bad:#f85149;--hold:#a371f7;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;line-height:1.6}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px 60px}
+  header{padding:34px 0 18px;border-bottom:1px solid var(--line)}
+  .kicker{color:var(--accent);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+  h1{font-size:23px;margin:8px 0 4px}
+  .sub{color:var(--muted);font-size:13px}
+  .real{display:inline-block;background:rgba(63,185,80,.12);border:1px solid var(--ok);color:var(--ok);
+    border-radius:20px;padding:2px 11px;font-size:12px;margin-left:8px}
+  .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0;padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+  .bar label{color:var(--muted);font-size:13px}
+  select,button{font-family:var(--sans);font-size:13px;background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:7px;padding:7px 12px}
+  button{cursor:pointer;border-color:#2b6cb0}button:hover{background:#20293a}button:disabled{opacity:.5}
+  .meta{color:var(--muted);font-size:12px;font-family:var(--mono)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin:14px 0}
+  .panel h2{font-size:15px;margin:0 0 10px;color:var(--accent)}
+  canvas{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;display:block}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:left}
+  th{color:var(--muted);font-weight:600}
+  tr.ev{cursor:pointer}tr.ev:hover{background:var(--panel2)}tr.ev.sel{background:#20293a}
+  .tag{font-family:var(--mono);font-size:11px;border-radius:5px;padding:1px 7px}
+  .tag.pro{background:rgba(240,136,62,.15);color:var(--warn);border:1px solid var(--warn)}
+  .tag.pas{background:rgba(154,167,184,.12);color:var(--muted);border:1px solid var(--line)}
+  .pill{font-family:var(--mono);font-size:12px;border-radius:5px;padding:2px 9px;font-weight:600}
+  .pill.A{background:rgba(63,185,80,.15);color:var(--ok);border:1px solid var(--ok)}
+  .pill.B,.pill['A→B']{background:rgba(163,113,247,.15);color:var(--hold);border:1px solid var(--hold)}
+  .pill.C{background:rgba(248,81,73,.15);color:var(--bad);border:1px solid var(--bad)}
+  .kv{font-size:13px;margin:5px 0}.kv b{color:var(--muted);font-weight:500;display:inline-block;min-width:64px}
+  .src{font-family:var(--mono);font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 6px;margin-left:6px}
+  #detail .empty{color:var(--muted);text-align:center;padding:40px 0}
+  .foot{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+  .disc{background:#1a1410;border:1px solid #3a2a15;border-radius:8px;padding:11px 14px;color:#d8c4a0;font-size:12.5px;margin-top:12px}
+  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+  .tally{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kicker">2026 AI 先锋未来人才大赛 · 赛力斯命题 · 团队补充材料</div>
+  <h1>质量风险自主管控 AI 数字员工<span class="real">● 真实数据驱动</span></h1>
+  <div class="sub">下方每个点/每条边/每个裁决都来自后端真实 Python 引擎的计算（UCI SECOM 真实工业数据 · 真 SPC · 真 Graph RAG · 确定性三态 gate），前端不造任何数据。</div>
+</header>
+
+<div class="bar">
+  <label>LLM 后端</label>
+  <select id="backend">
+    <option value="stub">stub（确定性占位·无需 key）</option>
+    <option value="openai">真模型（服务端配 DeepSeek/OpenAI key 时生效）</option>
+  </select>
+  <label>批次数</label>
+  <select id="n"><option>300</option><option>500</option><option>800</option></select>
+  <button id="run">▶ 运行真实分析</button>
+  <span id="status" class="meta"></span>
+</div>
+
+<div class="panel">
+  <h2 id="metaTitle">数据源</h2>
+  <div id="meta" class="meta">加载中…</div>
+</div>
+
+<div class="panel">
+  <h2>① SPC 控制图（真实 SECOM 传感器序列 · 真 Nelson 规则）</h2>
+  <canvas id="chart" height="300"></canvas>
+  <canvas id="cpk" height="120" style="margin-top:8px"></canvas>
+  <div class="meta" style="margin-top:8px">▲前瞻立案 ■越规格 ●越控制限 ·正常　|　下图=滚动Cpk，红线=1.33门限，红区=失控</div>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <h2>② 判异事件（点击查看该事件的诊断闭环）</h2>
+    <table><thead><tr><th>批次</th><th>类型</th><th>规则</th><th>Cpk</th><th>裁决</th></tr></thead>
+      <tbody id="events"></tbody></table>
+    <div class="tally" id="tally" style="margin-top:12px"></div>
+  </div>
+  <div class="panel" id="detail">
+    <h2>③ 诊断闭环：Graph RAG → Agent → 三态 gate</h2>
+    <div class="empty">← 点击左侧任一事件</div>
+  </div>
+</div>
+
+<div class="disc" id="disc"></div>
+<div class="foot">
+  真实公开数据 UCI SECOM（半导体制造过程传感器→pass/fail）。本页证明引擎在真实工业数据上跑得通；
+  迁移赛力斯只需替换数据接口与工艺本体。源码：<a href="https://github.com/rol1an/qc-agent-demo" target="_blank">github.com/rol1an/qc-agent-demo</a>
+</div>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>
