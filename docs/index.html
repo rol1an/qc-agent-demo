@@ -143,6 +143,19 @@ tr.ev.sel td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
 .kv b{color:var(--ink2);font-weight:500;font-size:12px}
 .src{font-family:var(--mono);font-size:10.5px;color:var(--blue);border:1px solid var(--blue);border-radius:3px;padding:0 6px}
 .empty{color:var(--ink2);text-align:center;padding:46px 0;font-size:13px}
+.explain p{margin:9px 0}
+.explain ul{margin:6px 0;padding-left:22px}
+.explain li{margin:4px 0}
+.pipe{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.pipe span{flex:1;min-width:118px;background:rgba(30,61,143,.045);border:1px solid var(--lineH);
+  padding:9px 10px;font-size:11.5px;color:var(--ink2);line-height:1.55;text-align:center}
+.pipe span b{color:var(--ink);font-size:12px}
+.pipe i{align-self:center;color:var(--blue);font-style:normal;font-weight:600}
+.live{margin-top:14px;border:1px solid var(--lineH);border-left:4px solid var(--blue);background:rgba(30,61,143,.04);
+  padding:12px 15px;font-size:13.5px}
+.live.flash{animation:flash 1.1s ease}
+.cmp .colm{opacity:.55;transition:.2s}
+.cmp .colm.cur{opacity:1;outline:2px solid var(--blue);outline-offset:-2px}
 
 /* 对比（左右两联单） */
 .toggle{display:inline-flex;border:1.5px solid var(--blue);border-radius:4px;overflow:hidden}
@@ -202,8 +215,27 @@ tr.ev.sel td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
 <div class="wrap">
 
 <section id="s-data">
-  <div class="col-h"><span class="no">工序 01</span><h2>核对数据来源</h2><span class="note">不编数据 · 用真实公开工业数据</span></div>
-  <div class="card" id="c-data"><div class="meta" id="meta">加载中…</div></div>
+  <div class="col-h"><span class="no">工序 01</span><h2>数据是什么，我们做了什么</h2><span class="note">不编数据 · 用真实公开工业数据</span></div>
+  <div class="card" id="c-data">
+    <div class="explain">
+      <p><b>① 这份数据是什么？</b>一座真实半导体工厂 2008 年 7–10 月的生产记录（公开数据集 <b>UCI SECOM</b>，任何人可下载核验）。共 <b>1567 个生产批次</b>，每个批次记录了两样东西：</p>
+      <ul>
+        <li>生产该批次时 <b>590 个传感器的读数</b>——温度、压力、流量这类制程参数（出于保密，传感器只有编号、没有名字）；</li>
+        <li>该批次最终的<b>质检结果</b>：合格或不合格（1567 个批次里有 104 个不合格）。</li>
+      </ul>
+      <p><b>② 我们对它做了什么处理？</b>四步，全部可在源码中复核：</p>
+      <div class="pipe">
+        <span>原始记录<br><b>1567 批 × 590 列</b></span><i>→</i>
+        <span>剔除无信息列<br><b>常量 116 + 缺失过半 28</b></span><i>→</i>
+        <span>缺失值补齐<br><b>剩 446 列 · 中位数插补</b></span><i>→</i>
+        <span>数据驱动选参数<br><b>与不合格最相关的 #59</b></span><i>→</i>
+        <span>送入监控<br><b>SPC 引擎（工序 02）</b></span>
+      </div>
+      <p class="meta" style="margin-top:10px">第 4 步说明：从 446 个传感器里，用统计相关性（哪个读数的波动与"批次不合格"关系最强）选出 #59 作为被监控的关键过程参数——<b>由数据选出，不是人挑的</b>。</p>
+      <p><b>③ 凭什么能类比赛力斯产线？</b>把"传感器 #59"换成焊接电流、喷涂流量这类过程参数，把"批次质检结果"换成整车下线检测——监控与诊断的逻辑完全一致。这正是"引擎与领域解耦"的含义：换数据接口与工艺本体即可迁移，引擎不动。</p>
+    </div>
+    <div class="meta" id="meta" style="border-top:1px dashed var(--lineH);padding-top:10px;margin-top:12px">加载中…</div>
+  </div>
 </section>
 
 <section id="s-spc">
@@ -238,11 +270,12 @@ tr.ev.sel td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
       </div>
       <span class="meta" id="cmpNote"></span>
     </div>
+    <div class="live" id="cmpLive"></div>
     <div class="cmp">
-      <div class="colm"><h4>STUB · 占位（无需 key，本地可复现）</h4><div id="cmpStub"></div></div>
-      <div class="colm ds"><h4>DEEPSEEK · 真模型推理输出</h4><div id="cmpDs"></div></div>
+      <div class="colm" id="colStub"><h4>STUB · 占位（无需 key，本地可复现）</h4><div id="cmpStub"></div></div>
+      <div class="colm ds" id="colDs"><h4>DEEPSEEK · 真模型推理输出</h4><div id="cmpDs"></div></div>
     </div>
-    <p class="meta" style="margin-top:12px">同一份真实数据、同一套确定性 gate，只更换根因推理的大脑：真模型选了更上游的失效机理，并触发了一次「复测未恢复 → 转人审」。这证明背后是真模型在推理、真 gate 在兜底——不是写死的文案。</p>
+    <p class="meta" style="margin-top:12px"><b>这两个按钮在切什么？</b>整套系统里只有"根因推理的大脑"是可替换的：<b>stub</b> 是不调用任何大模型的确定性占位（保证任何人无 key 也能复现），<b>DeepSeek</b> 是真实大模型的推理输出。切换后，上方<b>工序 02/03 的全部输出</b>（事件裁决、诊断单、来源标记）都会替换为该大脑的结果——可回到工序 03 对照查看。同数据、同 gate，大脑不同 → 根因与裁决不同，证明背后是真模型在推理、真 gate 在兜底，不是写死的文案。</p>
   </div>
 </section>
 
@@ -274,11 +307,11 @@ const AB=b=>b==='A'?'A':b==='C'?'C':'B';
 const ANDON_TXT={A:'放行·自动执行+复测',B:'呼叫·转人审','A→B':'复测未恢复·转人审',C:'停线·拦截幻觉'};
 
 const STEPS=[
- {sec:'s-data',title:'数据来源',tip:'先核对一件事：<b>这不是编的数据</b>。真实公开工业数据集 UCI SECOM——1567 个真实生产批次、590 个传感器、3 个月。点【下一道工序】。'},
- {sec:'s-spc',title:'过程监控',tip:'系统在真实传感器序列上跑 SPC 判异。特别看 <b>▲ 前瞻立案</b>——数值还没越出规格线就介入了（这是"主动"，不是"越限才报"）。'},
+ {sec:'s-data',title:'数据来源',tip:'先弄清数据：<b>这不是编的</b>——一座真实半导体工厂 3 个月的生产记录，每个批次 = 590 个传感器读数 + 一个合格/不合格结果。这一栏写清了数据是什么、我们做了哪四步处理、凭什么类比赛力斯。'},
+ {sec:'s-spc',title:'过程监控',tip:'系统把选出的过程参数当作产线上实时到来的测量流逐点监控。特别看 <b>▲ 前瞻立案</b>——数值还没越出规格线就介入了（这是"主动"，不是"越限才报"）。Cpk 是过程稳定性指标：跌破 1.33 = 接近失控。'},
  {sec:'s-diag',title:'根因检索',tip:'已替你调出「越规格」事件的诊断单。看证据子图：根因<b>横跨光刻和刻蚀两条工艺段</b>——图检索(Graph RAG)把两条链都找了出来，这正是普通向量检索会漏的全局关联。',act:selConflict},
  {sec:'s-diag',title:'三态裁决',tip:'因为检索到<b>两个互斥根因（证据冲突）</b>，确定性 gate 亮起黄灯 → 转人审。可回溯就放行、冲突就呼叫、幻觉就停线——这就是"确定性"，不让 AI 乱下结论。',act:selConflict},
- {sec:'s-compare',title:'换脑对照',tip:'最后看 <b>stub ↔ DeepSeek</b> 对照：同数据同 gate 只换大脑，真模型给出了不同的根因、还触发一次"复测未恢复转人审"。<b>真模型在推理、真 gate 在兜底</b>。巡检完毕。',act:()=>renderCompare()},
+ {sec:'s-compare',title:'换脑对照',tip:'最后，<b>亲手点一下</b>「stub / DeepSeek」两个按钮：下方"即时对照"行会当场变化（上方工序 02/03 也会整体替换）。同数据同 gate 只换大脑，结果不同——<b>真模型在推理、真 gate 在兜底</b>。巡检完毕。',act:()=>renderLive()},
 ];
 
 function renderSteps(){
@@ -303,15 +336,23 @@ function selConflict(){ const i=DATA.events.findIndex(e=>e.gate.branch!=='A'); s
 function load(){ DATA=window.SNAP[BE]; if(!DATA){$('meta').textContent='快照缺失';return;} render(); }
 function switchBackend(b){ if(!window.SNAP[b]||window.SNAP[b].error)return; BE=b;
   document.querySelectorAll('#toggle button').forEach(x=>x.classList.toggle('on',x.dataset.b===b));
-  $('cmpNote').textContent = b==='deepseek'?'已切到真 DeepSeek 输出':'确定性占位（无需 key）';
-  load(); }
+  $('cmpNote').textContent = b==='deepseek'?'已切到真 DeepSeek 输出 ↓':'已切到确定性占位 ↓';
+  load();
+  const lv=$('cmpLive'); if(lv){lv.classList.remove('flash');void lv.offsetWidth;lv.classList.add('flash');} }
+function renderLive(){
+  const d=window.SNAP[BE]; if(!d||!$('cmpLive'))return;
+  const e=d.events.find(x=>x.gate.branch!=='A')||d.events[0];
+  $('cmpLive').innerHTML=`<b>即时对照</b>　当前大脑「${BE==='deepseek'?'DeepSeek 真模型':'stub 占位'}」对批次 <span class="mono">#${e.idx}</span> 的判断：
+    根因『<b>${e.hypothesis.cause}</b>』 → <span class="andon ${AB(e.gate.branch)}"><i></i>${e.gate.branch} · ${ANDON_TXT[e.gate.branch]||''}</span>
+    <span class="meta">（来源标记 ${e.hypothesis.source}——点上方按钮切换，此行与工序 02/03 会一起变化）</span>`;
+  const cs=$('colStub'),cd=$('colDs');
+  if(cs&&cd){cs.classList.toggle('cur',BE==='stub');cd.classList.toggle('cur',BE==='deepseek');}
+}
 
 function render(){
   const m=DATA.meta;
-  $('meta').innerHTML=`<span style="color:var(--ink);font-size:14px;font-family:var(--sans)">真实数据集 <b>UCI SECOM</b> · ${m.rows} 批次 × ${m.cols} 有效传感器 · ${m.ts_start} → ${m.ts_end}</span><br>
-    受监控过程变量：传感器#${m.sensor}（数据驱动选出，非人为指定）｜ 当前推理后端：<b style="color:var(--blue)">${m.backend}</b><br>
-    <span style="color:var(--ink2)">${m.sensor_reason}</span>`;
-  drawChart(); drawCpk(); renderEvents(); renderCompare();
+  $('meta').innerHTML=`来自快照的实时读数：<b>${m.rows}</b> 批次 × 清洗后 <b>${m.cols}</b> 列 · ${m.ts_start} → ${m.ts_end} · 受监控参数 <span class="mono">#${m.sensor}</span> · 当前推理大脑 <b style="color:var(--blue)">${m.backend}</b>`;
+  drawChart(); drawCpk(); renderEvents(); renderCompare(); renderLive();
   if(DATA.events.length&&SEL<0) SEL=0;
   if(SEL>=0) select(Math.min(SEL,DATA.events.length-1));
 }
