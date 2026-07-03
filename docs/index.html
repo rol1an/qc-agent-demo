@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>质量风险自主管控 AI 数字员工 · 真实数据驱动演示</title>
+<style>
+:root{
+  --bg:#0b0e14;--panel:#12172130;--panelSolid:#121721;--panel2:#1a2130;--line:#28313f;
+  --txt:#e8eef6;--muted:#93a1b5;--accent:#5b8def;--accent2:#7c5cff;
+  --ok:#3fb950;--warn:#f0883e;--bad:#f85149;--hold:#a371f7;--gold:#e3b341;
+  --grad:linear-gradient(135deg,#5b8def,#7c5cff);
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',Segoe UI,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;line-height:1.65;
+  background-image:radial-gradient(1200px 500px at 70% -10%,rgba(124,92,255,.14),transparent),radial-gradient(900px 400px at 10% 0%,rgba(91,141,239,.12),transparent)}
+.wrap{max-width:1140px;margin:0 auto;padding:0 22px}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+
+/* Hero */
+.hero{padding:56px 0 26px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:rgba(63,185,80,.12);border:1px solid var(--ok);
+  color:var(--ok);border-radius:30px;padding:4px 13px;font-size:12.5px;font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.35}}
+h1{font-size:34px;line-height:1.2;margin:16px 0 8px;font-weight:750;letter-spacing:-.5px}
+h1 .g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tagline{color:var(--muted);font-size:16px;max-width:760px}
+.cta{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+.btn{cursor:pointer;border:none;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:600;font-family:var(--sans);
+  background:var(--grad);color:#fff;box-shadow:0 6px 20px rgba(91,141,239,.3);transition:.18s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 9px 26px rgba(91,141,239,.42)}
+.btn.ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--line);box-shadow:none}
+.trust{display:flex;gap:22px;margin-top:24px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+.trust b{color:var(--txt)}
+
+/* 引导条 sticky */
+.guide{position:sticky;top:0;z-index:50;background:rgba(11,14,20,.86);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);padding:12px 0;margin:10px 0 0}
+.steps{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.step{display:flex;align-items:center;gap:7px;padding:5px 12px;border-radius:22px;cursor:pointer;
+  border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:12.5px;transition:.15s}
+.step .num{width:19px;height:19px;border-radius:50%;background:#2a3444;color:var(--muted);display:grid;place-items:center;font-size:11px;font-weight:700}
+.step.active{border-color:transparent;background:var(--grad);color:#fff}
+.step.active .num{background:rgba(255,255,255,.25);color:#fff}
+.step.done{color:var(--ok);border-color:rgba(63,185,80,.4)}.step.done .num{background:var(--ok);color:#04240f}
+.tipbar{display:flex;align-items:center;gap:14px;margin-top:11px;background:linear-gradient(90deg,rgba(91,141,239,.14),transparent);
+  border-left:3px solid var(--accent);border-radius:8px;padding:11px 15px}
+.tipbar .txt{flex:1;font-size:14px;color:#dbe6f3}.tipbar .txt b{color:var(--gold)}
+.tipbar .next{white-space:nowrap;cursor:pointer;border:none;border-radius:8px;padding:8px 15px;font-weight:600;
+  background:var(--grad);color:#fff;font-size:13px}
+.tipbar .next:disabled{opacity:.4;cursor:default}
+
+section{padding:30px 0;scroll-margin-top:120px}
+.sec-h{display:flex;align-items:baseline;gap:11px;margin-bottom:12px}
+.sec-h .lbl{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:700}
+.sec-h h2{font-size:20px;margin:0;font-weight:700}
+.sec-h .desc{color:var(--muted);font-size:13px;margin-left:auto}
+.card{background:var(--panelSolid);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card.pulse{animation:pop 1.2s ease}
+@keyframes pop{0%{box-shadow:0 0 0 0 rgba(91,141,239,.5)}100%{box-shadow:0 0 0 16px rgba(91,141,239,0)}}
+.meta{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+canvas{width:100%;background:#0c111b;border:1px solid var(--line);border-radius:10px;display:block}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:880px){.grid{grid-template-columns:1fr}h1{font-size:27px}}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:8px 9px;text-align:left}
+th{color:var(--muted);font-weight:600}
+tr.ev{cursor:pointer;transition:.12s}tr.ev:hover{background:var(--panel2)}tr.ev.sel{background:rgba(91,141,239,.12)}
+.tag{font-family:var(--mono);font-size:11px;border-radius:5px;padding:1px 7px}
+.tag.pro{background:rgba(240,136,62,.16);color:var(--warn);border:1px solid var(--warn)}
+.tag.pas{background:rgba(147,161,181,.12);color:var(--muted);border:1px solid var(--line)}
+.pill{font-family:var(--mono);font-size:12px;border-radius:6px;padding:2px 10px;font-weight:700}
+.pill.A{background:rgba(63,185,80,.16);color:var(--ok);border:1px solid var(--ok)}
+.pill.B,.pill.AB{background:rgba(163,113,247,.16);color:var(--hold);border:1px solid var(--hold)}
+.pill.C{background:rgba(248,81,73,.16);color:var(--bad);border:1px solid var(--bad)}
+.kv{font-size:13px;margin:5px 0}.kv b{color:var(--muted);font-weight:500}
+.src{font-family:var(--mono);font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:5px;padding:1px 7px;margin-left:6px}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.toggle button{border:none;background:var(--panel2);color:var(--muted);padding:8px 16px;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:600}
+.toggle button.on{background:var(--grad);color:#fff}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+@media(max-width:880px){.cmp{grid-template-columns:1fr}}
+.cmp .col{background:#0c111b;border:1px solid var(--line);border-radius:10px;padding:14px}
+.cmp .col h4{margin:0 0 8px;font-size:14px}
+.big{font-size:22px;font-weight:750}
+.disc{background:#171208;border:1px solid #3a2c12;border-radius:10px;padding:13px 16px;color:#d9c6a0;font-size:12.5px}
+.foot{margin:30px 0 60px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+.tally{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:13px;margin-top:12px;align-items:center}
+.empty{color:var(--muted);text-align:center;padding:44px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="hero">
+  <span class="chip"><span class="dot"></span>真实数据驱动 · 非效果图</span>
+  <h1>主动管控设备质量风险的<br><span class="g">AI 数字员工</span></h1>
+  <p class="tagline">本页每一个点、每一条边、每一次裁决，都来自真实 Python 引擎在<b style="color:#e8eef6">真实工业数据</b>上的计算结果快照——不是前端假装算。跟着下面 5 步，60 秒看懂它为什么是真的。</p>
+  <div class="cta">
+    <button class="btn" onclick="startTour()">▶ 开始导览（推荐）</button>
+    <a class="btn ghost" href="https://github.com/rol1an/qc-agent-demo" target="_blank">查看源码 & 自行复现</a>
+  </div>
+  <div class="trust">
+    <div>数据：<b>UCI SECOM</b> 真实公开工业数据集</div>
+    <div>规模：<b>1567</b> 批次 × <b>590</b> 传感器 × 3 个月</div>
+    <div>可复现：<b>git clone → python run.py</b></div>
+  </div>
+</div>
+
+<div class="guide">
+  <div class="wrap" style="padding:0">
+    <div class="steps" id="steps"></div>
+    <div class="tipbar">
+      <div class="txt" id="tip">点击上方「开始导览」，我会一步步带你看清这套系统的每一环都是真的。</div>
+      <button class="next" id="nextBtn" onclick="nextStep()">开始 →</button>
+    </div>
+  </div>
+</div>
+
+<section id="s-data">
+  <div class="sec-h"><span class="lbl">01</span><h2>真实数据源</h2><span class="desc">不编数据，用真实公开工业数据</span></div>
+  <div class="card" id="c-data"><div class="meta" id="meta">加载中…</div></div>
+</section>
+
+<section id="s-spc">
+  <div class="sec-h"><span class="lbl">02</span><h2>SPC 引擎 · 主动前瞻立案</h2><span class="desc">真 Nelson 判异规则 + 滚动 Cpk</span></div>
+  <div class="card" id="c-spc">
+    <canvas id="chart" height="300"></canvas>
+    <canvas id="cpk" height="115" style="margin-top:8px"></canvas>
+    <div class="meta" style="margin-top:8px">▲ 前瞻立案（越规格前介入）　■ 越规格　● 越控制限　·正常　|　下图＝滚动 Cpk，红线＝1.33 门限，红区＝失控</div>
+  </div>
+</section>
+
+<section id="s-diag">
+  <div class="sec-h"><span class="lbl">03</span><h2>诊断闭环 · Graph RAG → Agent → 确定性 gate</h2></div>
+  <div class="grid">
+    <div class="card" id="c-events">
+      <b style="font-size:13px">判异事件（点任一行看诊断）</b>
+      <table style="margin-top:8px"><thead><tr><th>批次</th><th>类型</th><th>Cpk</th><th>裁决</th></tr></thead><tbody id="events"></tbody></table>
+      <div class="tally" id="tally"></div>
+    </div>
+    <div class="card" id="c-detail"><div class="empty">← 点左侧事件，或用上方导览</div></div>
+  </div>
+</section>
+
+<section id="s-compare">
+  <div class="sec-h"><span class="lbl">04</span><h2>真模型 vs 确定性占位</h2><span class="desc">同数据同 gate，只换大脑</span></div>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span>当前大脑：</span>
+      <div class="toggle" id="toggle">
+        <button data-b="stub" class="on" onclick="switchBackend('stub')">stub 确定性占位</button>
+        <button data-b="deepseek" onclick="switchBackend('deepseek')">DeepSeek 真模型</button>
+      </div>
+      <span class="meta" id="cmpNote"></span>
+    </div>
+    <div class="cmp">
+      <div class="col"><h4 style="color:var(--muted)">stub 占位（无需 key，本地可复现）</h4><div id="cmpStub"></div></div>
+      <div class="col"><h4 style="color:var(--accent)">DeepSeek 真模型推理</h4><div id="cmpDs"></div></div>
+    </div>
+    <p class="meta" style="margin-top:12px">同一份真实数据、同一套确定性 gate，只替换根因推理的大脑：真模型选了更上游的失效机理、且触发了一次"复测未恢复→转人审(A→B)"。证明背后是真模型在推理、真 gate 在兜底——不是写死的文案。</p>
+  </div>
+</section>
+
+<section id="s-close">
+  <div class="sec-h"><span class="lbl">05</span><h2>为什么这套引擎能迁到赛力斯</h2></div>
+  <div class="grid">
+    <div class="card"><b style="color:var(--accent)">引擎与领域解耦</b><p class="meta" style="margin-top:6px">SECOM 是真实半导体数据；迁到赛力斯汽车产线只需替换两处——数据接口(data_loader) + 工艺本体(ontology)，SPC / 图检索 / gate 一行不改。</p></div>
+    <div class="card"><b style="color:var(--ok)">团队能力</b><p class="meta" style="margin-top:6px">大模型 Agent 编排 · Graph RAG · 知识图谱/本体建模 · Agent 评测与可靠性工程；擅长把"概率性模型判断"转成"可审计的确定性结论"。</p></div>
+  </div>
+  <div class="disc" style="margin-top:14px">声明：SECOM 为真实<b>半导体</b>制造数据（传感器匿名），用于证明引擎可跑通；规格限由稳定基线派生(CL±6σ)仅供演示；stub 后端基于真实检索确定性产出假设，DeepSeek 快照为真实模型输出。所有外部数字均有据可查。</div>
+</section>
+
+<div class="foot">
+  质量风险自主管控 AI 数字员工 · 2026 AI 先锋未来人才大赛 · 赛力斯命题 · 团队补充材料<br>
+  源码与可复现说明：<a href="https://github.com/rol1an/qc-agent-demo" target="_blank">github.com/rol1an/qc-agent-demo</a>
+</div>
+</div>
+
+<script src="snapshots.js"></script>
+<script>
+let BE='stub', DATA=null, SEL=-1, STEP=0, TOURED=false;
+const $=id=>document.getElementById(id);
+const TCOL={process:'#5b8def',kcc:'#e3b341',mechanism:'#f0883e',mode:'#f85149',kpc:'#3fb950',disposition:'#a371f7',sensor_cluster:'#93a1b5'};
+const LAYER={sensor_cluster:0,process:1,kcc:2,mechanism:3,mode:4,kpc:5,disposition:6};
+const pillCls=b=>b==='A'?'A':b==='C'?'C':'B';
+
+const STEPS=[
+ {sec:'s-data',title:'真实数据',tip:'先确认一件事：<b>这不是编的数据</b>。用的是真实公开工业数据集 UCI SECOM——1567 个真实生产批次、590 个传感器、3 个月。点【下一步】看系统怎么用它。'},
+ {sec:'s-spc',title:'主动检出',tip:'系统在真实传感器序列上跑 SPC 判异规则，自动检出异常。特别看 <b>▲ 前瞻立案</b>——它在数值还没越出规格线时就介入了（这就是"主动"，不是"越限才报"）。下一步看它怎么定位根因。'},
+ {sec:'s-diag',title:'跨工艺段根因',tip:'我已替你点开"越规格"事件。看右侧证据子图：根因<b>横跨光刻和刻蚀两条工艺段</b>，图检索(Graph RAG)把两条链都找了出来——这正是普通向量检索会漏掉的全局关联。',act:selectConflict},
+ {sec:'s-diag',title:'确定性裁决',tip:'因为检索到<b>两个互斥根因(证据冲突)</b>，确定性 gate 判定 → 转人审。这就是"确定性"：可回溯就执行、冲突就转人审、幻觉就拦截，不让 AI 乱下结论。',act:selectConflict},
+ {sec:'s-compare',title:'真模型对比',tip:'最后，看这里的 <b>stub ↔ DeepSeek</b> 对比：同数据同 gate，只换大脑，真模型推出的根因不同、还触发了一次"复测未恢复转人审"。这证明背后是<b>真模型在推理、真 gate 在兜底</b>。',act:()=>renderCompare()},
+];
+
+function renderSteps(){
+  $('steps').innerHTML=STEPS.map((s,i)=>
+    `<div class="step ${i===STEP&&TOURED?'active':''} ${i<STEP&&TOURED?'done':''}" onclick="gotoStep(${i})">
+      <span class="num">${i<STEP&&TOURED?'✓':i+1}</span>${s.title}</div>`).join('');
+}
+function startTour(){TOURED=true;STEP=-1;nextStep();window.scrollTo({top:$('s-data').offsetTop-110,behavior:'smooth'});}
+function nextStep(){ if(!TOURED){TOURED=true;STEP=0;} else if(STEP<STEPS.length-1){STEP++;} else return;
+  applyStep(); }
+function gotoStep(i){TOURED=true;STEP=i;applyStep();}
+function applyStep(){
+  const s=STEPS[STEP]; $('tip').innerHTML=s.tip;
+  $('nextBtn').textContent = STEP>=STEPS.length-1?'完成 ✓':'下一步 →';
+  $('nextBtn').disabled = STEP>=STEPS.length-1;
+  renderSteps();
+  const el=$(s.sec); window.scrollTo({top:el.offsetTop-110,behavior:'smooth'});
+  const card=el.querySelector('.card'); if(card){card.classList.remove('pulse');void card.offsetWidth;card.classList.add('pulse');}
+  if(s.act)setTimeout(s.act,350);
+}
+function selectConflict(){ const i=DATA.events.findIndex(e=>e.gate.branch!=='A'); select(i>=0?i:DATA.events.length-1); }
+
+function load(){ DATA=window.SNAP[BE]; if(!DATA){$('meta').textContent='快照缺失';return;} render(); }
+function switchBackend(b){ if(!window.SNAP[b]||window.SNAP[b].error){return;} BE=b;
+  document.querySelectorAll('#toggle button').forEach(x=>x.classList.toggle('on',x.dataset.b===b));
+  $('cmpNote').textContent = b==='deepseek'?'已切到真 DeepSeek 输出':'确定性占位（无需 key）';
+  load(); }
+
+function render(){
+  const m=DATA.meta;
+  $('meta').innerHTML=`真实数据集 <b style="color:#e8eef6">UCI SECOM</b> · ${m.rows} 批次 × ${m.cols} 有效传感器 · ${m.ts_start} → ${m.ts_end}<br>
+    受监控过程变量：传感器#${m.sensor}（数据驱动选出，非人为指定）<br><span style="color:#93a1b5">${m.sensor_reason}</span>`;
+  drawChart(); drawCpk(); renderEvents(); renderCompare();
+  if(DATA.events.length&&SEL<0) SEL=0;
+  if(SEL>=0) select(Math.min(SEL,DATA.events.length-1));
+}
+function renderEvents(){
+  $('events').innerHTML=DATA.events.map((e,i)=>{const br=pillCls(e.gate.branch);
+    return `<tr class="ev ${i===SEL?'sel':''}" onclick="select(${i})">
+      <td>#${e.idx}</td><td><span class="tag ${e.proactive?'pro':'pas'}">${e.proactive?'前瞻':'被动'}</span></td>
+      <td>${e.cpk??'—'}</td><td><span class="pill ${br}">${e.gate.branch}</span></td></tr>`;}).join('');
+  const t=DATA.tally;
+  $('tally').innerHTML='三态分布：'+Object.entries(t).map(([k,v])=>`<span class="pill ${pillCls(k)}">${k}</span>×${v}`).join('　')+`　·　前瞻立案 ${DATA.proactive}`;
+}
+function cv(id,h){const c=$(id),w=c.clientWidth||820,r=devicePixelRatio||1;c.width=w*r;c.height=h*r;const x=c.getContext('2d');x.scale(r,r);return {x,w,h};}
+function drawChart(){const {x,w,h}=cv('chart',300),s=DATA.spc,v=s.series,n=v.length,pad=44;
+  const lo=Math.min(s.lsl,...v),hi=Math.max(s.usl,...v),X=i=>pad+i*(w-pad-12)/(n-1),Y=val=>h-24-(val-lo)/(hi-lo)*(h-40);
+  x.clearRect(0,0,w,h);
+  [[s.usl,'#f85149','USL'],[s.ucl,'#f0883e','UCL'],[s.cl,'#5b8def','CL'],[s.lcl,'#f0883e','LCL'],[s.lsl,'#f85149','LSL']].forEach(([y,c,l])=>{
+    x.strokeStyle=c;x.globalAlpha=y===s.cl?.9:.5;x.setLineDash(y===s.cl?[]:[4,4]);x.beginPath();x.moveTo(pad,Y(y));x.lineTo(w-12,Y(y));x.stroke();
+    x.globalAlpha=1;x.setLineDash([]);x.fillStyle=c;x.font='10px monospace';x.fillText(l,4,Y(y)+3);});
+  x.strokeStyle='#c9d4e0';x.lineWidth=1;x.beginPath();v.forEach((val,i)=>i?x.lineTo(X(i),Y(val)):x.moveTo(X(i),Y(val)));x.stroke();
+  DATA.events.forEach(e=>{if(e.idx>=n)return;const px=X(e.idx),py=Y(e.value);
+    x.fillStyle=e.kind==='beyond_spec'?'#f85149':e.proactive?'#f0883e':'#e3b341';x.beginPath();
+    if(e.proactive){x.moveTo(px,py-6);x.lineTo(px-5,py+4);x.lineTo(px+5,py+4);x.closePath();}
+    else if(e.kind==='beyond_spec')x.rect(px-3.5,py-3.5,7,7);else x.arc(px,py,4,0,7);x.fill();});}
+function drawCpk(){const {x,w,h}=cv('cpk',115),cp=DATA.spc.cpk,n=cp.length,pad=44;
+  const mx=Math.max(2.2,...cp.filter(a=>a!=null)),X=i=>pad+i*(w-pad-12)/(n-1),Y=val=>h-16-(val/mx)*(h-26);
+  x.clearRect(0,0,w,h);x.fillStyle='rgba(248,81,73,.12)';
+  cp.forEach((val,i)=>{if(val!=null&&val<1.33)x.fillRect(X(i)-1,Y(1.33),3,h-16-Y(1.33));});
+  x.strokeStyle='#f85149';x.setLineDash([4,4]);x.beginPath();x.moveTo(pad,Y(1.33));x.lineTo(w-12,Y(1.33));x.stroke();x.setLineDash([]);
+  x.fillStyle='#f85149';x.font='10px monospace';x.fillText('Cpk 1.33',4,Y(1.33)+3);
+  x.strokeStyle='#3fb950';x.lineWidth=1.3;x.beginPath();let st=0;cp.forEach((val,i)=>{if(val==null)return;(st++?x.lineTo:x.moveTo).call(x,X(i),Y(val));});x.stroke();}
+
+function select(i){SEL=i;document.querySelectorAll('tr.ev').forEach((t,j)=>t.classList.toggle('sel',j===i));
+  const e=DATA.events[i],H=e.hypothesis,G=e.gate,br=pillCls(G.branch);
+  $('c-detail').innerHTML=
+    `<b style="font-size:13px">诊断闭环 · 批次 #${e.idx}（${e.proactive?'前瞻立案':'被动告警'}）</b>
+     <div class="meta" style="margin:4px 0 10px">${e.rule} · Cpk=${e.cpk??'—'}</div>
+     <div style="color:var(--accent);font-size:13px;font-weight:600">Graph RAG 检索的证据子图</div>
+     <div class="meta" style="margin:3px 0">${e.retrieval.summary}</div>${svgGraph(e.retrieval.graph,H.evidence)}
+     <div style="color:var(--warn);font-size:13px;font-weight:600;margin-top:12px">Agent 根因假设<span class="src">${H.source}</span></div>
+     <div class="kv"><b>根因 </b>${H.cause}　<b>证据 </b>${H.evidence.length}节点　<b>置信 </b>${H.confidence}　${H.conflict?'<span style="color:var(--hold)">证据冲突</span>':'<span style="color:var(--ok)">自洽</span>'}</div>
+     <div class="meta">${H.rationale}</div>
+     <div style="color:var(--ok);font-size:13px;font-weight:600;margin-top:12px">确定性三态 gate 裁决 <span class="pill ${br}">${G.branch}</span></div>
+     <div class="kv"><b>处置 </b>${G.action}</div>
+     <div class="meta">${G.reason}${G.recheck_ok===false?' · 复测未恢复→转人审':G.recheck_ok?' · 复测已恢复':''}</div>`;
+}
+function svgGraph(g,evid){ if(!g.nodes.length)return '<div class="meta">（实体不在本体内 → 见 gate 拦截）</div>';
+  const cols={};g.nodes.forEach(nd=>{const L=LAYER[nd.type]??0;(cols[L]=cols[L]||[]).push(nd);});
+  const W=Math.max(...Object.keys(cols).map(Number))+1,colW=148,rowH=42,Hh=Math.max(...Object.values(cols).map(a=>a.length))*rowH+18,pos={};
+  Object.entries(cols).forEach(([L,arr])=>arr.forEach((nd,r)=>pos[nd.id]={x:+L*colW+66,y:r*rowH+24}));
+  let s=`<svg width="100%" viewBox="0 0 ${W*colW+16} ${Hh}" style="background:#0a0e14;border:1px solid #28313f;border-radius:9px;margin-top:6px">
+    <defs><marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#4b5568"/></marker></defs>`;
+  g.edges.forEach(e=>{const a=pos[e.s],b=pos[e.t];if(!a||!b)return;
+    s+=`<line x1="${a.x+48}" y1="${a.y}" x2="${b.x-48}" y2="${b.y}" stroke="#39465a" marker-end="url(#ar)"/>
+        <text x="${(a.x+b.x)/2}" y="${(a.y+b.y)/2-3}" fill="#6b7688" font-size="9" text-anchor="middle">${e.rel||''}</text>`;});
+  g.nodes.forEach(nd=>{const p=pos[nd.id],hot=(evid||[]).includes(nd.id)||nd.root,c=TCOL[nd.type]||'#93a1b5';
+    s+=`<rect x="${p.x-48}" y="${p.y-13}" width="96" height="26" rx="7" fill="${hot?c:'#12172130'}" fill-opacity="${hot?.22:1}" stroke="${c}" stroke-width="${hot?2:1}"/>
+        <text x="${p.x}" y="${p.y+4}" fill="${c}" font-size="9.5" text-anchor="middle">${nd.id.length>9?nd.id.slice(0,8)+'…':nd.id}</text>`;});
+  return s+'</svg>';}
+
+function renderCompare(){
+  const sum=k=>{const d=window.SNAP[k];if(!d||d.error)return '<span class="meta">未提供</span>';
+    const causes=[...new Set(d.events.map(e=>e.hypothesis.cause))];
+    return `<div class="kv"><b>根因（去重）</b><br><span class="big" style="color:${k==='deepseek'?'var(--accent)':'var(--txt)'}">${causes.join(' / ')}</span></div>
+      <div class="kv"><b>三态分布</b> ${Object.entries(d.tally).map(([a,b])=>`<span class="pill ${pillCls(a)}">${a}</span>×${b}`).join(' ')}</div>
+      <div class="meta">来源标记：${d.events[0].hypothesis.source}</div>`;};
+  $('cmpStub').innerHTML=sum('stub'); $('cmpDs').innerHTML=sum('deepseek');
+}
+
+renderSteps(); load();
+if(!window.SNAP.deepseek||window.SNAP.deepseek.error){document.querySelector('[data-b=deepseek]').disabled=true;}
+</script>
+</body>
+</html>
