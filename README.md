@@ -6,7 +6,7 @@
 **🔗 在线可视化 Demo（点开即看、有操作导览、无需装环境）：https://rol1an.github.io/qc-agent-demo/**
 页面内嵌真实 Python 引擎跑出的计算结果快照（含 stub 与真 DeepSeek 两份对比），前端零造数据。
 
-**📎 团队补充材料**（答辩备题 / 相关经验 / 数据样本 / 研究笔记 / 参考清单）：[团队补充材料.md](./团队补充材料.md)
+**📎 团队补充材料**（答辩备题 / 相关经验 / 数据样本 / 研究笔记 / 参考清单）：[PDF 版](./supplement-pdf/main.pdf) · [Markdown 版](./团队补充材料.md)（LaTeX 源码在 [supplement-pdf/](./supplement-pdf/)，XeLaTeX 可复现编译）
 
 ---
 
