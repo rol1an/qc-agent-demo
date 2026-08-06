@@ -49,12 +49,17 @@ def _stub(features: dict, sg: Subgraph) -> RootCauseHypothesis:
     mode = sg.modes[0]
     path = sg.evidence_paths[0] if sg.evidence_paths else [sg.root, mode]
     disp = path[-1] if sg.dispositions else "无"
-    # 置信度 = 证据完整度: 有唯一模式且有完整路径 → 高; 冲突或缺路径 → 低
+    # 置信度 = 证据完整度: 有唯一模式且有完整路径 → 高; 冲突或缺路径 → 低。
+    # 回灌加成: 该处置沉淀的【复测通过案例】(feedback_upsert 写回的图节点)每条 +0.02，
+    # 封顶 +0.06 —— 历史闭环证据让同类判断更笃定，且加成本身可回溯到具体案例节点。
     conf = 0.85 if (not conflict and sg.evidence_paths) else 0.45
+    boost = min(0.06, 0.02 * sg.n_cases)
     return RootCauseHypothesis(cause_entity=mode, evidence_node_ids=path, conflict=conflict,
-                               confidence=conf, disposition=disp,
+                               confidence=round(min(0.99, conf + boost), 2), disposition=disp,
                                rationale=f"检索子图中 {sg.root} 可达失效模式 {mode}，"
-                                         f"{'但存在多个互斥候选' if conflict else '路径唯一、证据自洽'}。",
+                                         f"{'但存在多个互斥候选' if conflict else '路径唯一、证据自洽'}"
+                                         + (f"；含 {sg.n_cases} 条复测通过的历史案例(+{boost:.2f})" if boost else "")
+                                         + "。",
                                source="stub")
 
 

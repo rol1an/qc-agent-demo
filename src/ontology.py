@@ -58,6 +58,7 @@ class Subgraph:
     dispositions: list[str]
     evidence_paths: list[list[str]]   # 从 root 到 disposition 的可回溯路径(=证据链)
     community_summary: str
+    n_cases: int = 0              # 可达处置上沉淀的复测通过案例数(增量回灌产物)
 
 
 def build_ontology() -> nx.DiGraph:
@@ -95,9 +96,48 @@ def graph_rag(g: nx.DiGraph, root: str, max_hops: int = 5) -> Subgraph:
             paths.append(nx.shortest_path(ug, root, d))
         except nx.NetworkXNoPath:
             pass
+    cases = case_count(g, disps)
     summ = (f"『{root}』可达 {len(modes)} 个失效模式、{len(kpcs)} 个质量特性、"
-            f"{len(disps)} 条处置；共 {len(paths)} 条可回溯证据路径。")
-    return Subgraph(root, modes, kpcs, disps, paths, summ)
+            f"{len(disps)} 条处置；共 {len(paths)} 条可回溯证据路径"
+            + (f"；沉淀历史处置案例 {cases} 条" if cases else "") + "。")
+    return Subgraph(root, modes, kpcs, disps, paths, summ, n_cases=cases)
+
+
+# ── LightRAG 式双层检索(设计参考 Guo et al. 2024, LightRAG: Simple and Fast RAG) ──
+# low-level  : 面向具体实体的局部检索——从受监控传感器簇正向查本工序链(单因、路径唯一);
+# high-level : 面向跨主题的全局检索——从终端 KPC 反查跨工艺段多个上游失效模式(多因)。
+# 显式分层的价值: 检索入口与方向随异常形态自适应，冲突信号(多候选)天然交给 gate。
+
+def dual_level_retrieve(g: nx.DiGraph, event, cluster: str) -> tuple[str, Subgraph]:
+    """按 SPC 事件形态选层: 终端越规格(严重失效)走 high-level 从 KPC 反查跨工艺段；
+    其余(前瞻/控制限告警)走 low-level 从受监控传感器簇局部查。返回(层级, 子图)。"""
+    if event.kind == "beyond_spec":
+        return "high", graph_rag(g, "关键尺寸CD_KPC", max_hops=5)
+    return "low", graph_rag(g, cluster, max_hops=5)
+
+
+# ── 增量回灌(设计参考 LightRAG 的 incremental insertion: 新证据进图不用全图重建) ──
+
+def feedback_upsert(g: nx.DiGraph, disposition: str, batch_idx: int, ok: bool) -> str:
+    """🟢 复测闭环回灌底座: 把一次处置的复测结果作为【案例节点】增量写回本体图。
+    后续检索同一处置时能看到历史案例数(见 graph_rag 的社区摘要)，Agent 置信度
+    也会引用它(见 agent._stub) —— "回灌"从架构图口号变成图上真实可查的节点。"""
+    node = f"案例#批次{batch_idx}"
+    g.add_node(node, ntype="case", ok=ok)
+    g.add_edge(node, disposition, rel="复测通过" if ok else "复测未恢复")
+    return node
+
+
+def case_count(g: nx.DiGraph, dispositions: list[str], only_ok: bool = True) -> int:
+    """统计若干处置节点上沉淀的历史案例数(only_ok=True 只数复测通过的)。"""
+    n = 0
+    for d in dispositions:
+        if d not in g:
+            continue
+        for pred in g.predecessors(d):
+            if g.nodes[pred].get("ntype") == "case" and (not only_ok or g.nodes[pred].get("ok")):
+                n += 1
+    return n
 
 
 def entity_in_ontology(g: nx.DiGraph, name: str) -> bool:

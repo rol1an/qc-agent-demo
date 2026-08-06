@@ -13,10 +13,12 @@ from spc import ControlLimits, rolling_cpk
 
 @dataclass
 class GateDecision:
-    branch: str        # 'A' 自动执行+复测 | 'B' 拒答转人审 | 'C' 拦截(防幻觉)
+    branch: str        # 'A' 自主执行+复测 | '影子' 建议转人审对照 | 'B' 拒答转人审
+                       # | 'A→B' 复测未恢复升级 | 'C' 拦截(防幻觉)
     action: str
     reason: str
-    recheck_ok: bool | None = None   # A 分支复测结果
+    recheck_ok: bool | None = None   # A/影子 分支复测(或对照)结果
+    note: str | None = None          # 分级放权事件(晋升/降级)说明，来自影子协同台账
 
 
 CONF_MIN = 0.6         # 自动执行的最低置信度门槛
@@ -50,13 +52,26 @@ def recheck(series: np.ndarray, event_idx: int, cl: ControlLimits, horizon: int 
     return rolling_cpk(series, cl, j) >= 1.33
 
 
-def decide_and_close(hyp, g, series, event_idx, cl) -> GateDecision:
-    """A 分支执行后走复测: 恢复则闭环，未恢复自动落入 B(转人审)。"""
+def decide_and_close(hyp, g, series, event_idx, cl, ledger=None) -> GateDecision:
+    """
+    A 分支的完整闭环，叠加【影子协同分级放权】(ledger 非空时):
+      未获自主权的处置 → 即使判 A 也只出建议(影子分支)，转人审执行；同时用数据回放
+        中人工处置后的实际走向对照 AI 建议，累积一致率(达标才放权，见 shadow.py)。
+      已获自主权的处置 → 自主执行+强制复测；复测未恢复 → 升级人审并【立即收权】。
+    """
     d = three_state_gate(hyp, g)
-    if d.branch == "A":
-        d.recheck_ok = recheck(series, event_idx, cl)
-        if not d.recheck_ok:
-            return GateDecision("A→B", "复测未恢复 → 升级人审", d.reason + "；但复测未回到受控",
-                                recheck_ok=False)
-        d.action += "；复测已回到受控，闭环并回灌底座"
+    if d.branch != "A":
+        return d
+    if ledger is not None and not ledger.is_autonomous(hyp.disposition):
+        agreed = recheck(series, event_idx, cl)   # 数据回放中人工处置后的实际走向
+        promo = ledger.observe_shadow(hyp.disposition, agreed, event_idx)
+        return GateDecision("影子", f"影子建议: {hyp.disposition} —— 本类处置自主权未获得，转人审执行",
+                            d.reason + f"；影子对照: AI 建议与实际走向{'一致' if agreed else '不一致'}",
+                            recheck_ok=agreed, note=promo)
+    d.recheck_ok = recheck(series, event_idx, cl)
+    if not d.recheck_ok:
+        note = ledger.demote(hyp.disposition) if ledger is not None else None
+        return GateDecision("A→B", "复测未恢复 → 升级人审", d.reason + "；但复测未回到受控",
+                            recheck_ok=False, note=note)
+    d.action += "；复测已回到受控，闭环并回灌底座"
     return d
