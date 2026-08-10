@@ -18,7 +18,7 @@
   --blue:#1E3D8F;           /* 蓝图蓝 */
   --blue2:#3A5CC5;
   --lineH:#C9CFDC;          /* 表格细线 */
-  --ok:#0E8A4C; --amber:#B26E00; --red:#C0392B; --hold:#7C4DBE;
+  --ok:#0E8A4C; --amber:#B26E00; --red:#C0392B; --hold:#7C4DBE; --shd:#0F7F8C;
   --stamp:#B23A2F;          /* 检验章红 */
   --mono:'IBM Plex Mono',ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',Segoe UI,sans-serif;
@@ -134,6 +134,8 @@ tr.ev.sel td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
 .andon.B i{background:var(--hold);box-shadow:0 0 6px rgba(124,77,190,.7)}
 .andon.C{color:var(--red);border-color:var(--red);background:rgba(192,57,43,.06)}
 .andon.C i{background:var(--red);box-shadow:0 0 6px rgba(192,57,43,.7)}
+.andon.S{color:var(--shd);border-color:var(--shd);background:rgba(15,127,140,.06)}
+.andon.S i{background:var(--shd);box-shadow:0 0 6px rgba(15,127,140,.7)}
 .andon-strip{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px;font-size:12.5px;color:var(--ink2)}
 
 /* 诊断单 */
@@ -156,6 +158,23 @@ tr.ev.sel td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
 .live.flash{animation:flash 1.1s ease}
 .cmp .colm{opacity:.55;transition:.2s}
 .cmp .colm.cur{opacity:1;outline:2px solid var(--blue);outline-offset:-2px}
+
+/* 影子放权演进带 */
+.arc{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+.arc .node{flex:1;min-width:158px;border:1px solid var(--lineH);background:var(--paper2);
+  padding:10px 12px;font-size:12px;line-height:1.6;color:var(--ink2)}
+.arc .node b{color:var(--ink)}
+.arc .node .bi{font-family:var(--mono);font-weight:600;font-size:12px;color:var(--ink)}
+.arc .node.sh{border-top:3px solid var(--shd)}
+.arc .node.au{border-top:3px solid var(--ok)}
+.arc .node.de{border-top:3px solid var(--red)}
+.arc i.sep{align-self:center;color:var(--blue);font-style:normal;font-weight:600}
+.arc .promo{align-self:center;text-align:center;min-width:132px;max-width:190px;border:1.5px dashed var(--stamp);
+  color:var(--stamp);padding:9px 11px;font-size:11.5px;font-weight:600;line-height:1.55;background:rgba(178,58,47,.04)}
+.ledger{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.ledger span{border:1px solid var(--lineH);background:var(--paper2);padding:6px 12px;font-size:12.5px}
+td.bad{color:var(--red);font-weight:600}
+td.good{color:var(--ok);font-weight:600}
 
 /* 对比（左右两联单） */
 .toggle{display:inline-flex;border:1.5px solid var(--blue);border-radius:4px;overflow:hidden}
@@ -188,7 +207,7 @@ tr.ev.sel td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
   <div class="sheet-head">
     <div class="eyebrow"><span>2026 AI 先锋未来人才大赛 · 赛力斯命题</span><span class="no"><span class="mono">FORM QC-2026-A</span> · 参赛队：安灯常绿队 · 团队补充材料</span></div>
     <h1>一份由 <em>AI 数字员工</em> 填写的<br>设备质量检验记录</h1>
-    <p class="sub">下面这份"检验单"上的每个数据点、每条证据链、每次裁决，都来自真实 Python 引擎在<b>真实工业数据</b>上的计算结果快照——前端不编造任何数据。跟随 5 道工序，60 秒看懂它为什么是真的。</p>
+    <p class="sub">下面这份"检验单"上的每个数据点、每条证据链、每次裁决，都来自真实 Python 引擎在<b>真实工业数据</b>上的计算结果快照——前端不编造任何数据。跟随 7 道工序，90 秒看懂它为什么是真的。</p>
     <div class="stamp"><span>REAL DATA<span class="big">真实数据</span>可复现 · 已验证</span></div>
     <div class="spec">
       <div><span class="k">数据来源 <span class="en">SOURCE</span></span><span class="v">UCI SECOM（真实公开）</span></div>
@@ -248,19 +267,38 @@ tr.ev.sel td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
 </section>
 
 <section id="s-diag">
-  <div class="col-h"><span class="no">工序 03</span><h2>诊断闭环</h2><span class="note">Graph RAG 检索 → Agent 假设 → 确定性三态裁决</span></div>
+  <div class="col-h"><span class="no">工序 03</span><h2>诊断闭环</h2><span class="note">双层图检索 → Agent 假设 → 确定性裁决 → 案例回灌</span></div>
   <div class="grid2">
     <div class="card">
       <div class="meta" style="margin-bottom:8px">判异事件记录（点击任一行调出诊断单）</div>
       <table><thead><tr><th>批次</th><th>性质</th><th>CPK</th><th>裁决</th></tr></thead><tbody id="events"></tbody></table>
       <div class="andon-strip" id="tally"></div>
+      <div class="meta" id="hallucNote" style="margin-top:10px"></div>
     </div>
     <div class="card diag" id="c-detail"><div class="empty">← 点击左侧事件记录</div></div>
   </div>
 </section>
 
+<section id="s-shadow">
+  <div class="col-h"><span class="no">工序 04</span><h2>影子协同 · 分级放权</h2><span class="note">自主执行权不是天生的，是用数据挣来的</span></div>
+  <div class="card">
+    <div class="explain">
+      <p>传统 Agent 做到"检测后提醒人处理"为止。这套系统多走一步：gate 判 A（证据齐、置信够）的处置，一开始也<b>只出建议、仍由人执行</b>（影子期）；系统同时记录 AI 建议与产线实际走向是否一致。某类处置攒够 <b>n≥3 例且一致率 100%</b> 才获得自主执行权；自主执行后一旦复测未恢复，<b>立即收回自主权</b>退回影子期重新累积。放权与收权全部由确定性代码按可复核的统计规则裁决，不由模型自评。</p>
+    </div>
+    <div class="arc" id="arc"></div>
+    <div class="meta" style="margin:6px 0 2px">▲ 演进带由工序 03 的事件按时间顺序生成（快照真实数据）：青色 = 影子期（AI 只建议），红色虚线框 = 放权事件，绿色 = 自主执行。</div>
+    <div class="ledger" id="ledger"></div>
+    <div class="meta" id="ledgerNote" style="margin-top:8px"></div>
+  </div>
+</section>
+
+<section id="s-contrast">
+  <div class="col-h"><span class="no">工序 05</span><h2>对照实验 · 纯 LLM 直批 vs 三态 gate</h2><span class="note">同数据同事件 · python baseline_compare.py 可复现</span></div>
+  <div class="card" id="c-contrast"></div>
+</section>
+
 <section id="s-compare">
-  <div class="col-h"><span class="no">工序 04</span><h2>换脑对照试验</h2><span class="note">同数据 · 同 gate · 只换推理大脑</span></div>
+  <div class="col-h"><span class="no">工序 06</span><h2>换脑对照试验</h2><span class="note">同数据 · 同 gate · 只换推理大脑</span></div>
   <div class="card">
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       <span style="font-size:13.5px">当前大脑：</span>
@@ -280,14 +318,14 @@ tr.ev.sel td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
 </section>
 
 <section id="s-close">
-  <div class="col-h"><span class="no">工序 05</span><h2>迁移结论与团队</h2></div>
+  <div class="col-h"><span class="no">工序 07</span><h2>迁移结论与团队</h2></div>
   <div class="pair">
     <div class="card"><b style="color:var(--blue)">引擎与领域解耦</b>
       <p class="meta" style="margin-top:6px;line-height:1.8">SECOM 是真实半导体数据；迁到赛力斯汽车产线只需替换两处——数据接口(data_loader) 与工艺本体(ontology)，SPC / 图检索 / gate 一行不改。</p></div>
     <div class="card"><b style="color:var(--ok)">团队能力</b>
       <p class="meta" style="margin-top:6px;line-height:1.8">大模型 Agent 编排 · Graph RAG · 知识图谱/本体建模 · Agent 评测与可靠性工程；擅长把「概率性模型判断」转成「可审计的确定性结论」。</p></div>
   </div>
-  <div class="disc">备注：SECOM 为真实<b>半导体</b>制造数据（传感器匿名），用于证明引擎可跑通；规格限由稳定基线派生（CL±6σ）仅供演示；stub 后端基于真实检索确定性产出假设，DeepSeek 快照为真实模型输出。所有外部数字均有据可查。</div>
+  <div class="disc">备注：SECOM 为真实<b>半导体</b>制造数据（传感器匿名），用于证明引擎可跑通；规格限由稳定基线派生（CL±6σ）仅供演示；stub 后端基于真实检索确定性产出假设，DeepSeek 快照为真实模型输出；影子放权门槛 n≥3 / 一致率 100% 为演示值（放权门槛参数而非效果承诺），生产环境按质量体系配置（建议 n≥200 / ≥99%）。所有外部数字均有据可查。</div>
 </section>
 
 <div class="foot">
@@ -301,16 +339,18 @@ tr.ev.sel td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
 let BE='stub', DATA=null, SEL=-1, STEP=0, TOURED=false;
 const $=id=>document.getElementById(id);
 /* 亮底工程配色 */
-const TCOL={process:'#1E3D8F',kcc:'#B26E00',mechanism:'#C05621',mode:'#C0392B',kpc:'#0E8A4C',disposition:'#7C4DBE',sensor_cluster:'#51607A'};
-const LAYER={sensor_cluster:0,process:1,kcc:2,mechanism:3,mode:4,kpc:5,disposition:6};
-const AB=b=>b==='A'?'A':b==='C'?'C':'B';
-const ANDON_TXT={A:'放行·自动执行+复测',B:'呼叫·转人审','A→B':'复测未恢复·转人审',C:'停线·拦截幻觉'};
+const TCOL={process:'#1E3D8F',kcc:'#B26E00',mechanism:'#C05621',mode:'#C0392B',kpc:'#0E8A4C',disposition:'#7C4DBE',sensor_cluster:'#51607A',case:'#0F7F8C'};
+const LAYER={sensor_cluster:0,process:1,kcc:2,mechanism:3,mode:4,kpc:5,disposition:6,case:7};
+const AB=b=>b==='A'?'A':b==='C'?'C':b==='影子'?'S':'B';
+const ANDON_TXT={A:'放行·自主执行+复测',B:'呼叫·转人审','A→B':'复测未恢复·转人审',C:'停线·拦截幻觉','影子':'影子建议·人审执行'};
 
 const STEPS=[
  {sec:'s-data',title:'数据来源',tip:'先弄清数据：<b>这不是编的</b>——一座真实半导体工厂 3 个月的生产记录，每个批次 = 590 个传感器读数 + 一个合格/不合格结果。这一栏写清了数据是什么、我们做了哪四步处理、凭什么类比赛力斯。'},
  {sec:'s-spc',title:'过程监控',tip:'系统把选出的过程参数当作产线上实时到来的测量流逐点监控。特别看 <b>▲ 前瞻立案</b>——数值还没越出规格线就介入了（这是"主动"，不是"越限才报"）。Cpk 是过程稳定性指标：跌破 1.33 = 接近失控。'},
- {sec:'s-diag',title:'根因检索',tip:'已替你调出「越规格」事件的诊断单。看证据子图：根因<b>横跨光刻和刻蚀两条工艺段</b>——图检索(Graph RAG)把两条链都找了出来，这正是普通向量检索会漏的全局关联。',act:selConflict},
+ {sec:'s-diag',title:'根因检索',tip:'已替你调出「越规格」事件的诊断单。看证据子图：根因<b>横跨光刻和刻蚀两条工艺段</b>——双层图检索对严重失效走 high 层，从终端质量特性反查，把两条链都找了出来，这正是普通向量检索会漏的全局关联。',act:selConflict},
  {sec:'s-diag',title:'三态裁决',tip:'因为检索到<b>两个互斥根因（证据冲突）</b>，确定性 gate 亮起黄灯 → 转人审。可回溯就放行、冲突就呼叫、幻觉就停线——这就是"确定性"，不让 AI 乱下结论。',act:selConflict},
+ {sec:'s-shadow',title:'影子放权',tip:'比"检测后提醒人"多走一步：gate 判 A 的处置一开始也<b>只出建议、由人执行</b>（影子期），系统统计 AI 建议与产线实际走向的一致率——攒够样本且全部一致才放权，放权后复测未恢复<b>立即收权</b>。下方演进带就是本次快照里真实发生的放权全过程。'},
+ {sec:'s-contrast',title:'对照实验',tip:'同一份数据、同一批事件：纯 LLM 直批有 <b>3 次无效处置下发后无人发现、1 次幻觉被执行</b>；加上三态 gate 后这两个数字都归零，代价是 27.3% 的事件转人审——用可控的人工介入换掉不可控的错误执行。'},
  {sec:'s-compare',title:'换脑对照',tip:'最后，<b>亲手点一下</b>「stub / DeepSeek」两个按钮：下方"即时对照"行会当场变化（上方工序 02/03 也会整体替换）。同数据同 gate 只换大脑，结果不同——<b>真模型在推理、真 gate 在兜底</b>。巡检完毕。',act:()=>renderLive()},
 ];
 
@@ -352,7 +392,7 @@ function renderLive(){
 function render(){
   const m=DATA.meta;
   $('meta').innerHTML=`来自快照的实时读数：<b>${m.rows}</b> 批次 × 清洗后 <b>${m.cols}</b> 列 · ${m.ts_start} → ${m.ts_end} · 受监控参数 <span class="mono">#${m.sensor}</span> · 当前推理大脑 <b style="color:var(--blue)">${m.backend}</b>`;
-  drawChart(); drawCpk(); renderEvents(); renderCompare(); renderLive();
+  drawChart(); drawCpk(); renderEvents(); renderArc(); renderCompare(); renderLive();
   if(DATA.events.length&&SEL<0) SEL=0;
   if(SEL>=0) select(Math.min(SEL,DATA.events.length-1));
 }
@@ -361,8 +401,45 @@ function renderEvents(){
     return `<tr class="ev ${i===SEL?'sel':''}" onclick="select(${i})">
       <td class="mono">#${e.idx}</td><td><span class="tag ${e.proactive?'pro':'pas'}">${e.proactive?'前瞻':'被动'}</span></td>
       <td class="mono">${e.cpk??'—'}</td><td><span class="andon ${br}"><i></i>${e.gate.branch}</span></td></tr>`;}).join('');
-  $('tally').innerHTML='本次巡检三态汇总：'+Object.entries(DATA.tally).map(([k,v])=>
+  $('tally').innerHTML='本次巡检裁决汇总：'+Object.entries(DATA.tally).map(([k,v])=>
     `<span class="andon ${AB(k)}"><i></i>${k}×${v}</span>`).join(' ')+`　·　前瞻立案 ${DATA.proactive} 起`;
+  $('hallucNote').innerHTML=DATA.halluc?`防幻觉护栏演示（不进入上表事件流）：注入本体外根因『${DATA.halluc.cause}』→ <span class="andon C"><i></i>C · 停线拦截</span>　<span class="meta">${DATA.halluc.reason}</span>`:'';
+}
+function renderArc(){
+  const arc=$('arc'),lg=$('ledger'),note=$('ledgerNote'); if(!arc)return;
+  if(!DATA.ledger){arc.innerHTML='';lg.innerHTML='';
+    note.textContent=DATA.schema_note?DATA.schema_note+'。此快照不含放权台账，切回 stub 查看演进带。':'该快照未包含放权台账。';return;}
+  const cnt={},items=[];
+  DATA.events.forEach(e=>{
+    const b=e.gate.branch; if(b!=='影子'&&b!=='A'&&b!=='A→B')return;
+    const disp=e.hypothesis.disposition; let cls,head,body;
+    if(b==='影子'){cnt[disp]=(cnt[disp]||0)+1;cls='sh';head=`影子期 第${cnt[disp]}例`;
+      body=`AI 建议『${disp}』→ 人审执行；与实际走向<b>${e.gate.recheck_ok?'一致 ✓':'不一致 ✗'}</b>`;}
+    else if(b==='A'){cls='au';head='自主执行';
+      body=`『${disp}』直接下发 + 强制复测：<b>${e.gate.recheck_ok?'已恢复 ✓':'未恢复'}</b>`;}
+    else{cls='de';head='复测未恢复';body=`『${disp}』执行后未回到受控 → 升级人审并<b>立即收权</b>`;}
+    items.push(`<div class="node ${cls}"><span class="bi">批次#${e.idx}</span> · ${head}<br>${body}</div>`);
+    if(e.gate.note)items.push(`<div class="promo">⚖ ${e.gate.note}</div>`);
+  });
+  arc.innerHTML=items.join('<i class="sep">→</i>');
+  lg.innerHTML='<span style="border:none;background:none;padding-left:0;color:var(--ink2)">放权台账：</span>'
+    +DATA.ledger.map(s=>`<span>${s}</span>`).join('');
+  note.innerHTML='台账为快照内真实累计状态；门槛 n≥3 / 一致率 100% 为演示值，生产环境按赛力斯质量体系配置（建议 n≥200 / ≥99%）。';
+}
+function renderContrast(){
+  const el=$('c-contrast'),C=window.CONTRAST; if(!el)return;
+  if(!C){el.innerHTML='<div class="meta">对照实验数据未生成（运行 src/gen_snapshot.py）。</div>';return;}
+  const b=C['对照组_纯LLM直批'],o=C['实验组_三态gate'];
+  el.innerHTML=`
+    <p class="explain" style="margin:0 0 12px">两组接收<b>完全相同的输入</b>——SECOM 全部 ${C['样本事件数']-1} 起 SPC 事件 + 1 例注入的本体外幻觉根因。对照组模拟传统做法（Agent 假设一律直接执行），实验组过三态 gate（此实验不带影子台账，单独度量 gate 本身的贡献）。</p>
+    <table><thead><tr><th>指标</th><th>纯 LLM 直批（传统 Agent）</th><th>三态 gate + 复测闭环</th></tr></thead><tbody>
+      <tr><td>自动执行的事件</td><td class="mono">${b.auto_exec} / ${C['样本事件数']}</td><td class="mono">${o.auto_exec} / ${C['样本事件数']}</td></tr>
+      <tr><td>无效处置下发后<b>无人发现</b></td><td class="bad">${b['无效下发_无机制发现']} 起（占执行的 ${(b['无效下发率']*100).toFixed(1)}%）</td><td class="good">${o['无效下发_无机制发现']} 起</td></tr>
+      <tr><td>执行后未恢复 → 被复测闭环捕获升级</td><td>—（无复测机制）</td><td class="mono">${o['执行后未恢复_被复测闭环捕获升级']} 起</td></tr>
+      <tr><td>幻觉根因被执行</td><td class="bad">${b.halluc_exec} 起</td><td class="good">${o.halluc_exec} 起（本体白名单拦截）</td></tr>
+      <tr><td>转人审</td><td class="mono">${b.human}</td><td class="mono">${o.human} 起（人工介入率 ${(o['人工介入率']*100).toFixed(1)}%）</td></tr>
+    </tbody></table>
+    <p class="meta" style="margin-top:10px"><b>口径</b>（可从 baseline_compare.py 逐行复核）：${C['口径']}</p>`;
 }
 function cv(id,h){const c=$(id),w=c.clientWidth||820,r=devicePixelRatio||1;c.width=w*r;c.height=h*r;const x=c.getContext('2d');x.scale(r,r);return {x,w,h};}
 function gridBg(x,w,h){ x.strokeStyle='rgba(30,61,143,.07)'; x.lineWidth=1;
@@ -398,15 +475,16 @@ function select(i){SEL=i;document.querySelectorAll('tr.ev').forEach((t,j)=>t.cla
   const e=DATA.events[i],H=e.hypothesis,G=e.gate,br=AB(G.branch);
   $('c-detail').innerHTML=
     `<div class="meta" style="border-bottom:1px solid var(--lineH);padding-bottom:8px">诊断单 · 批次 #${e.idx} · ${e.proactive?'前瞻立案':'被动告警'} · ${e.rule} · Cpk=${e.cpk??'—'}</div>
-     <h3 style="color:var(--blue)">检索 <span class="ridx">GRAPH RAG · 证据子图</span></h3>
-     <div class="meta">${e.retrieval.summary}</div>${svgGraph(e.retrieval.graph,H.evidence)}
+     <h3 style="color:var(--blue)">检索 <span class="ridx">${e.retrieval.level?e.retrieval.level.toUpperCase()+'-LEVEL · ':''}双层图检索 · 证据子图</span></h3>
+     <div class="meta">${e.retrieval.level?(e.retrieval.level==='high'?'严重失效（越规格）→ high 层：从终端质量特性反查跨工艺段。':'常规告警 → low 层：从受监控传感器簇正查本工序链。'):''}${e.retrieval.summary}</div>${svgGraph(e.retrieval.graph,H.evidence)}
      <h3 style="color:var(--amber)">假设 <span class="ridx">AGENT · 根因推理</span><span class="src">${H.source}</span></h3>
      <div class="kv"><b>根因</b> ${H.cause}　<b>证据</b> ${H.evidence.length} 节点　<b>置信</b> ${H.confidence}　${H.conflict?'<span style="color:var(--hold);font-weight:700">证据冲突</span>':'<span style="color:var(--ok);font-weight:700">自洽</span>'}</div>
      <div class="meta">${H.rationale}</div>
      <h3 style="color:var(--ink)">裁决 <span class="ridx">确定性三态 GATE</span></h3>
      <div style="margin:4px 0"><span class="andon ${br}"><i></i>${G.branch} · ${ANDON_TXT[G.branch]||''}</span></div>
      <div class="kv"><b>处置</b> ${G.action}</div>
-     <div class="meta">${G.reason}${G.recheck_ok===false?' · 复测未恢复→转人审':G.recheck_ok?' · 复测已恢复':''}</div>`;
+     <div class="meta">${G.reason}${G.branch==='影子'?'':G.recheck_ok===false?' · 复测未恢复→转人审':G.recheck_ok?' · 复测已恢复':''}</div>
+     ${G.note?`<div class="kv" style="color:var(--stamp);font-weight:600">⚖ ${G.note}</div>`:''}`;
 }
 function svgGraph(g,evid){ if(!g.nodes.length)return '<div class="meta">（实体不在本体内 → 见 gate 停线拦截）</div>';
   const cols={};g.nodes.forEach(nd=>{const L=LAYER[nd.type]??0;(cols[L]=cols[L]||[]).push(nd);});
@@ -431,7 +509,7 @@ function renderCompare(){
   $('cmpStub').innerHTML=sum('stub'); $('cmpDs').innerHTML=sum('deepseek');
 }
 
-renderSteps(); load();
+renderSteps(); renderContrast(); load();
 if(!window.SNAP.deepseek||window.SNAP.deepseek.error){document.querySelector('[data-b=deepseek]').disabled=true;}
 </script>
 </body>

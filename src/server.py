@@ -20,10 +20,10 @@ import networkx as nx
 
 from data_loader import load_secom, pick_process_variable
 from spc import fit_control_limits, detect, rolling_cpk
-from ontology import build_ontology, attach_sensor_cluster, graph_rag
-from agent import diagnose
-from gate import decide_and_close
-from run import entry_entity
+from ontology import build_ontology, attach_sensor_cluster, dual_level_retrieve, feedback_upsert
+from agent import diagnose, RootCauseHypothesis
+from gate import decide_and_close, three_state_gate
+from shadow import AutonomyLedger, N_MIN, PROMOTE_AT
 
 STATIC = Path(__file__).resolve().parent / "static"
 
@@ -34,7 +34,8 @@ _PS = pick_process_variable(_X, _LABEL, _TS)
 print(f"就绪: {_X.shape}, 选中传感器#{_PS.sensor_id}")
 
 
-def ego_edges(g: nx.DiGraph, root: str, radius: int = 5):
+def ego_edges(g: nx.DiGraph, root: str, radius: int = 6):
+    # radius=6 而非检索用的 5: 多留一跳，让回灌的案例节点(挂在处置下游)也画进证据子图
     """抽出以 root 为中心的子图节点+边，供前端画证据链(真实检索结果)。"""
     if root not in g:
         return {"nodes": [], "edges": []}
@@ -56,27 +57,35 @@ def analyze(backend: str, baseline: int = 200, n: int = 300, max_events: int = 8
     cluster = f"传感器簇#{ps.sensor_id}"
     attach_sensor_cluster(g, cluster, "薄膜沉积CVD")
 
+    ledger = AutonomyLedger()
     ev_out, tally = [], {}
     for e in [e for e in events if e.idx < n][:max_events]:
-        root = entry_entity(e, cluster)
-        sg = graph_rag(g, root)
+        level, sg = dual_level_retrieve(g, e, cluster)
         feats = {"批次": e.idx, "规则": e.rule, "Cpk": round(e.cpk, 2), "前瞻": e.proactive}
         hyp = diagnose(feats, sg)
-        d = decide_and_close(hyp, g, series, e.idx, cl)
+        d = decide_and_close(hyp, g, series, e.idx, cl, ledger=ledger)
         tally[d.branch] = tally.get(d.branch, 0) + 1
         ev_out.append({
             "idx": e.idx, "kind": e.kind, "rule": e.rule, "value": round(e.value, 2),
             "cpk": None if np.isnan(e.cpk) else round(e.cpk, 2), "proactive": e.proactive,
-            "retrieval": {"root": root, "summary": sg.community_summary,
-                          "graph": ego_edges(g, root),
-                          "evidence_paths": sg.evidence_paths},
+            "retrieval": {"root": sg.root, "level": level, "summary": sg.community_summary,
+                          "graph": ego_edges(g, sg.root),
+                          "evidence_paths": sg.evidence_paths, "n_cases": sg.n_cases},
             "hypothesis": {"cause": hyp.cause_entity, "evidence": hyp.evidence_node_ids,
                            "conflict": hyp.conflict, "confidence": round(hyp.confidence, 2),
                            "disposition": hyp.disposition, "source": hyp.source,
                            "rationale": hyp.rationale},
             "gate": {"branch": d.branch, "action": d.action, "reason": d.reason,
-                     "recheck_ok": d.recheck_ok},
+                     "recheck_ok": d.recheck_ok, "note": d.note},
         })
+        if d.branch in ("A", "A→B", "影子") and d.recheck_ok is not None:
+            feedback_upsert(g, hyp.disposition, e.idx, d.recheck_ok)   # 复测案例增量回灌
+
+    # 防幻觉护栏演示(与 run.py 分支 C 一致): 注入本体外根因，gate 停线拦截
+    fake = RootCauseHypothesis("等离子喷涂枪老化", ["x"], False, 0.9,
+                               "更换喷枪", "(注入的 LLM 幻觉演示)", "inject")
+    dc = three_state_gate(fake, g)
+    tally[dc.branch] = tally.get(dc.branch, 0) + 1
 
     return {
         "meta": {"rows": int(_X.shape[0]), "cols": int(_X.shape[1]),
@@ -90,6 +99,13 @@ def analyze(backend: str, baseline: int = 200, n: int = 300, max_events: int = 8
         "events": ev_out,
         "tally": tally,
         "proactive": sum(e["proactive"] for e in ev_out),
+        "halluc": {"cause": fake.cause_entity, "branch": dc.branch,
+                   "action": dc.action, "reason": dc.reason},
+        "ledger": ledger.summary(),
+        "autonomy": {disp: {"level": t.level, "n": t.n, "agree": t.agree,
+                            "promoted_at": t.promoted_at, "demotions": t.demotions}
+                     for disp, t in ledger.tracks.items()},
+        "thresholds": {"n_min": N_MIN, "promote_at": PROMOTE_AT},
     }
 
 

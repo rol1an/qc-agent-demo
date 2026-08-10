@@ -26,7 +26,8 @@ from agent import diagnose, RootCauseHypothesis
 from gate import three_state_gate, recheck, decide_and_close
 
 
-def main():
+def compute() -> dict:
+    """跑完整对照实验并返回结果 dict(不打印、不落盘)，供 main 与 gen_snapshot 复用。"""
     X, label, ts = load_secom()
     ps = pick_process_variable(X, label, ts)
     cl = fit_control_limits(ps.values[:200])
@@ -68,7 +69,7 @@ def main():
     assert dc.branch == "C"                          # gate 组被本体白名单拦截
 
     n = len(events) + 1
-    result = {
+    return {
         "样本事件数": n,
         "对照组_纯LLM直批": {**base,
                           "无效下发率": round(base["无效下发_无机制发现"] / base["auto_exec"], 3)},
@@ -78,6 +79,10 @@ def main():
         "口径": ("无效=执行后15批次内滚动Cpk未回1.33(数据回放)。对照组无复测机制，无效下发无人发现;"
                 "实验组执行后强制复测，未恢复即捕获升级人审。样本=SECOM全部SPC事件+1注入幻觉。"),
     }
+
+
+def main():
+    result = compute()
     print(json.dumps(result, ensure_ascii=False, indent=2))
     out = pathlib.Path(__file__).parent.parent / "docs" / "contrast.json"
     out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")

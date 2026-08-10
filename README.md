@@ -151,7 +151,8 @@ src/
   run.py               端到端编排 + 终端可视化
   plot.py              真实数据控制图 PNG
   server.py            可视化前端后端（标准库）+ static/
-docs/             GitHub Pages 在线 demo（自包含前端 + 真实计算快照）
+  gen_snapshot.py      生成 docs/ 内嵌的真实计算快照 + 对照实验数字
+docs/             GitHub Pages 在线 demo（自包含前端 + 真实计算快照，7 道工序导览含影子放权演进带与对照实验）
 ```
 
 ## 诚实声明
