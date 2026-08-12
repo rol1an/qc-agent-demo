@@ -3,3 +3,9 @@ __pycache__/
 *.pyc
 *.pyo
 .DS_Store
+
+# 企业提供的脱敏数据包 —— 绝不入库（内容仍属企业内部资料，仅本地分析用）
+*.xlsx
+*.docx
+赛力斯*
+serres_data/
