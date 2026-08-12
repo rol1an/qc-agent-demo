@@ -15,7 +15,8 @@
 from __future__ import annotations
 import os, argparse, textwrap
 from data_loader import load_secom, pick_process_variable
-from spc import fit_control_limits, detect, ascii_chart
+from spc import fit_control_limits, detect, ascii_chart, jarque_bera, capability_gate
+from ontology import kpc_char_class
 from ontology import build_ontology, attach_sensor_cluster, dual_level_retrieve, feedback_upsert
 from agent import diagnose, RootCauseHypothesis
 from gate import decide_and_close, three_state_gate
@@ -38,7 +39,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--baseline", type=int, default=200, help="稳定基线批次数")
     ap.add_argument("--cpk-gate", type=float, default=1.33)
-    ap.add_argument("--max-events", type=int, default=6)
+    # 默认跑全部事件: 只跑前 6 个只能看到"一路晋升"，跑全序列才能看到自主执行
+    # 复测未恢复被【收权】、再退回影子期重新累积的完整生命周期。
+    ap.add_argument("--max-events", type=int, default=12)
     args = ap.parse_args()
     backend = os.getenv("QC_LLM_BACKEND", "stub")
 
@@ -52,6 +55,10 @@ def main():
 
     banner("1 · SPC 引擎 (真 Nelson 规则 + 滚动 Cpk)")
     cl = fit_control_limits(ps.values[:args.baseline])
+    nm = jarque_bera(ps.values)
+    print(f"{c('前提校验','dim')} Jarque-Bera 正态性检验: {nm.verdict}")
+    print(c("  → 不受影响: Rule2(中心线取中位数,两侧各50%由定义保证) / Rule3(纯序关系)；"
+            "受影响: Cpk 绝对值与 Rule1 的 3σ 标称误报率", "dim"))
     events = detect(ps.values, cl, cpk_gate=args.cpk_gate)
     print(f"控制限 CL={cl.cl:.2f} ±3σ=[{cl.lcl:.2f},{cl.ucl:.2f}] 规格=[{cl.lsl:.2f},{cl.usl:.2f}]")
     print(ascii_chart(ps.values, cl, events))
@@ -67,12 +74,15 @@ def main():
     tally = {}
     for e in events[:args.max_events]:
         level, sg = dual_level_retrieve(g, e, cluster)
+        klass = kpc_char_class(g, sg.kpcs)      # 该异常影响的 KPC 特性等级 → 能力门限档位
         feats = {"批次": e.idx, "规则": e.rule, "Cpk": round(e.cpk, 2), "前瞻": e.proactive}
         hyp = diagnose(feats, sg)
         d = decide_and_close(hyp, g, ps.values, e.idx, cl, ledger=ledger)
         tag = "前瞻立案" if e.proactive else "被动告警"
         print(f"\n{c('●','!')} 批次#{e.idx} [{tag}] {e.rule}  Cpk={e.cpk:.2f}")
         print(f"  {c('检索','dim')} [{level}-level] {sg.community_summary}")
+        print(f"  {c('特性','dim')} 影响 KPC {sg.kpcs or '—'} → 特性等级 [{klass}]，"
+              f"量产能力门限 Cpk≥{capability_gate(klass)} (IATF 16949 8.5.1.5)")
         print(f"  {c('假设','dim')} 根因『{hyp.cause_entity}』 证据{len(hyp.evidence_node_ids)}节点 "
               f"conf={hyp.confidence:.2f} {'冲突' if hyp.conflict else '自洽'} [{hyp.source}]")
         print(f"  {c('裁决','dim')} {c('['+d.branch+']', branch_color(d.branch))} {d.action}")
@@ -109,6 +119,9 @@ def main():
         · SPC 事件由真 Nelson 规则从 SECOM 真实传感器序列检出
         · 根因由 LightRAG 式双层图检索驱动(low=工序局部 / high=KPC 跨段反查→多因→冲突→转人审)
         · 分支由确定性 gate 裁决；AI 自主权按影子协同一致率放权/收权，复测案例增量回灌本体
+        · 能力门限按 KPC 特性等级分档(一般 1.33 / 安全特殊特性 1.67, IATF 16949 8.5.1.5)
+      {c('局限','dim')} Cpk 的正态性前提在本数据上未通过(见上方前提校验)，故其绝对值不作
+      能力判定；门限敏感性与三条局限边界见 `python threshold_sensitivity.py`。
       引擎与领域解耦: 迁到赛力斯只需换 data_loader 的数据接口 + ontology 的工艺本体。"""))
 
 

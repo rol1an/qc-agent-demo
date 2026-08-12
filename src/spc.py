@@ -5,7 +5,8 @@ SPC 引擎层 —— 【真实的】统计过程控制，不是画折线。
   - I-MR 控制限估计（用移动极差 MR-bar/1.128 估 σ，这是 IATF/SPC 教科书做法，
     比直接 std 更稳健，抗离群点）
   - Nelson / Western Electric 判异规则（rule 1/2/3）—— 逐点真判定
-  - 滚动过程能力指数 Cpk
+  - 滚动过程能力指数 Cpk + 按特性等级分级的能力门限（见 CAPABILITY_GATES）
+  - Cpk 前提校验（Jarque-Bera 正态性检验）—— 不满足就如实降级为趋势指标，不硬算
   - "前瞻立案"：在【尚无点越规格】时，靠 rule 2/3（连续单边/趋势）或 Cpk 下滑提前预警
      —— 这就是方案里"主动 vs 被动"的落点。
 
@@ -14,6 +15,20 @@ SPC 引擎层 —— 【真实的】统计过程控制，不是画折线。
 from __future__ import annotations
 import numpy as np
 from dataclasses import dataclass, field
+
+
+# ── 能力门限按特性等级分级 ────────────────────────────────────────────────
+# 依据 IATF 16949:2016 条款 8.5.1.5（特殊特性控制）+ AIAG-VDA SPC 手册 6.2：
+#   一般特性                     量产 Cpk ≥ 1.33
+#   特殊特性 CC/SC（安全、法规相关，如制动/转向件）  优先要求 Cpk ≥ 1.67
+# 门限是【按特性等级配置的参数】，不是一个全局常数 —— 迁到赛力斯时由质量部门按
+# 各 KPC 的特性等级标定（本体里 KPC 节点带 char_class 属性，见 ontology.py）。
+CAPABILITY_GATES = {"general": 1.33, "special": 1.67}
+
+
+def capability_gate(char_class: str = "general") -> float:
+    """取某特性等级的量产能力门限。未知等级按最严处理（安全优先）。"""
+    return CAPABILITY_GATES.get(char_class, max(CAPABILITY_GATES.values()))
 
 
 @dataclass
@@ -59,6 +74,45 @@ def rolling_cpk(series: np.ndarray, cl_obj: ControlLimits, i: int, window: int =
         return float("nan")
     mu, sd = float(np.mean(w)), float(np.std(w, ddof=1)) or 1e-9
     return min(cl_obj.usl - mu, mu - cl_obj.lsl) / (3 * sd)
+
+
+# ── Cpk 的前提校验：正态性 ────────────────────────────────────────────────
+# AIAG-VDA SPC 手册 6.2.3：非正态数据（强度、寿命这类特性）禁止直接算 Cp/Cpk，
+# 须先做变换（如 Box-Cox）或改用非正态能力算法。本 demo 用 Jarque-Bera 检验
+# 显式验一遍前提，不通过就在输出里如实降级 —— 不假装 Cpk 绝对值可作能力判定。
+
+@dataclass
+class NormalityCheck:
+    n: int
+    skew: float          # 偏度（正态≈0）
+    kurt: float          # 超值峰度（正态≈0）
+    jb: float            # Jarque-Bera 统计量，渐近 χ²(2)
+    passed: bool         # jb < 5.99 → 5% 显著性下不拒绝正态假设
+    verdict: str
+
+    CRIT_5PCT = 5.99     # χ²(2) 的 95% 分位
+
+
+def jarque_bera(x: np.ndarray) -> NormalityCheck:
+    """🟢 Jarque-Bera 正态性检验（纯 numpy，无 scipy 依赖）: JB = n/6·(S² + K²/4)。"""
+    v = np.asarray(x, dtype=float)
+    v = v[np.isfinite(v)]
+    n = len(v)
+    if n < 20:
+        return NormalityCheck(n, float("nan"), float("nan"), float("nan"), False,
+                              "样本不足 20，不做正态性判定")
+    mu, sd = float(np.mean(v)), float(np.std(v)) or 1e-9
+    z = (v - mu) / sd
+    skew = float(np.mean(z ** 3))
+    kurt = float(np.mean(z ** 4) - 3.0)
+    jb = n / 6.0 * (skew ** 2 + kurt ** 2 / 4.0)
+    passed = jb < NormalityCheck.CRIT_5PCT
+    verdict = (f"JB={jb:.1f} < 5.99，5% 显著性下不拒绝正态假设 → Cpk 绝对值可作能力判定"
+               if passed else
+               f"JB={jb:.1f} ≥ 5.99，拒绝正态假设(偏度{skew:+.2f} 峰度{kurt:+.2f}) → "
+               f"本 demo 的 Cpk 仅作【相对趋势指标】，绝对值不作能力判定；"
+               f"生产环境按 AIAG-VDA SPC 6.2.3 先做 Box-Cox 变换或改用非正态能力算法")
+    return NormalityCheck(n, skew, kurt, jb, passed, verdict)
 
 
 def nelson_flags(series: np.ndarray, cl_obj: ControlLimits, i: int) -> tuple[str, str, bool] | None:

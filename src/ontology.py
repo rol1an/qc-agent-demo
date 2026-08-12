@@ -50,6 +50,18 @@ _TRIPLES = [
 ]
 
 
+# 🟢 KPC 特性等级 —— 决定该质量特性用哪档能力门限（见 spc.CAPABILITY_GATES）。
+# 依据 IATF 16949:2016 8.5.1.5：特殊特性（CC/SC）从严。本 demo 是半导体工艺，
+# 按半导体自身的关键性判断标注（关键尺寸 CD 直接决定电学性能与良率 → special）；
+# 迁到赛力斯汽车产线时，制动/转向/安全气囊相关 KPC 标 special，其余 general
+# —— 标注由质量部门按 APQP 特殊特性清单给出，代码不猜。
+_KPC_CLASS = {
+    "关键尺寸CD_KPC": "special",
+    "膜厚均匀性KPC": "general",
+    "平坦度KPC": "general",
+}
+
+
 @dataclass
 class Subgraph:
     root: str
@@ -62,12 +74,21 @@ class Subgraph:
 
 
 def build_ontology() -> nx.DiGraph:
-    """构建有向工艺知识图谱。"""
+    """构建有向工艺知识图谱。KPC 节点带特性等级(char_class)，供能力门限分级用。"""
     g = nx.DiGraph()
     for s, rel, t, st, tt in _TRIPLES:
         g.add_node(s, ntype=st); g.add_node(t, ntype=tt)
         g.add_edge(s, rel_to := t, rel=rel)
+    for kpc, klass in _KPC_CLASS.items():
+        if kpc in g:
+            g.nodes[kpc]["char_class"] = klass
     return g
+
+
+def kpc_char_class(g: nx.DiGraph, kpcs: list[str]) -> str:
+    """一组 KPC 里最严的特性等级 —— 一个异常若影响到安全特殊特性，整单按 special 处理。"""
+    return "special" if any(g.nodes.get(k, {}).get("char_class") == "special"
+                            for k in kpcs) else "general"
 
 
 def attach_sensor_cluster(g: nx.DiGraph, cluster_name: str, process: str) -> None:

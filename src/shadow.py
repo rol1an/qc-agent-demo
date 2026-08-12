@@ -63,8 +63,18 @@ class AutonomyLedger:
         return f"『{disposition}』自主执行复测未恢复 → 收回自主权，退回影子期重新累积"
 
     def summary(self) -> list[str]:
-        return [f"『{d}』{'🟢自主' if t.level == 'auto' else '🕶影子'} "
-                f"观察{t.n}例 一致率{t.agree_rate:.0%}"
-                + (f" (批次#{t.promoted_at}起放权)" if t.promoted_at is not None else "")
-                + (f" 降级{t.demotions}次" if t.demotions else "")
-                for d, t in self.tracks.items()]
+        """人读的台账。降级过的条目要说清"现在是影子期"，不能只写"某批次起放权"。"""
+        out = []
+        for d, t in self.tracks.items():
+            head = f"『{d}』[{'自主期' if t.level == 'auto' else '影子期'}] 观察{t.n}例 一致率{t.agree_rate:.0%}"
+            if t.level == "auto":
+                hist = f" (批次#{t.promoted_at}起放权)" if t.promoted_at is not None else ""
+                if t.demotions:
+                    hist += f"，历史降级{t.demotions}次后重新挣回"
+            elif t.promoted_at is not None:
+                hist = (f" (曾于批次#{t.promoted_at}放权，复测未恢复已收权"
+                        + (f"{t.demotions}次" if t.demotions > 1 else "") + "，正重新累积)")
+            else:
+                hist = " (尚未获得自主权)"
+            out.append(head + hist)
+        return out

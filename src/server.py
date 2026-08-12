@@ -46,7 +46,9 @@ def ego_edges(g: nx.DiGraph, root: str, radius: int = 6):
     return {"nodes": nodes, "edges": edges}
 
 
-def analyze(backend: str, baseline: int = 200, n: int = 300, max_events: int = 8) -> dict:
+def analyze(backend: str, baseline: int = 200, n: int = 700, max_events: int = 12) -> dict:
+    # n=700 / max_events=12: 覆盖到批次 #634 那次"自主执行复测未恢复→收权"，
+    # 否则前端只能展示单向晋升，看不到放权阶梯的自我纠正。
     """🟢 跑真实全链路，产出前端要画的一切(真实计算结果)。"""
     os.environ["QC_LLM_BACKEND"] = backend
     ps = _PS

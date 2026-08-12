@@ -284,6 +284,7 @@ td.good{color:var(--ok);font-weight:600}
   <div class="card">
     <div class="explain">
       <p>传统 Agent 做到"检测后提醒人处理"为止。这套系统多走一步：gate 判 A（证据齐、置信够）的处置，一开始也<b>只出建议、仍由人执行</b>（影子期）；系统同时记录 AI 建议与产线实际走向是否一致。某类处置攒够 <b>n≥3 例且一致率 100%</b> 才获得自主执行权；自主执行后一旦复测未恢复，<b>立即收回自主权</b>退回影子期重新累积。放权与收权全部由确定性代码按可复核的统计规则裁决，不由模型自评。</p>
+      <p><b>这条阶梯在真实数据上双向走过一遍</b>：该类处置在批次 #166 挣得自主权，连续 3 次自主执行复测均恢复；到批次 #634 一次自主执行后复测未回到受控，自主权当即被收回，退回影子期从零累积。<b>机制会自我纠正，不是单向发放的许可证。</b></p>
     </div>
     <div class="arc" id="arc"></div>
     <div class="meta" style="margin:6px 0 2px">▲ 演进带由工序 03 的事件按时间顺序生成（快照真实数据）：青色 = 影子期（AI 只建议），红色虚线框 = 放权事件，绿色 = 自主执行。</div>
@@ -295,6 +296,11 @@ td.good{color:var(--ok);font-weight:600}
 <section id="s-contrast">
   <div class="col-h"><span class="no">工序 05</span><h2>对照实验 · 纯 LLM 直批 vs 三态 gate</h2><span class="note">同数据同事件 · python baseline_compare.py 可复现</span></div>
   <div class="card" id="c-contrast"></div>
+</section>
+
+<section id="s-method">
+  <div class="col-h"><span class="no">附录 A</span><h2>方法学前提与门限标定</h2><span class="note">主动暴露局限 · python threshold_sensitivity.py 可复现</span></div>
+  <div class="card" id="c-method"></div>
 </section>
 
 <section id="s-compare">
@@ -349,7 +355,7 @@ const STEPS=[
  {sec:'s-spc',title:'过程监控',tip:'系统把选出的过程参数当作产线上实时到来的测量流逐点监控。特别看 <b>▲ 前瞻立案</b>——数值还没越出规格线就介入了（这是"主动"，不是"越限才报"）。Cpk 是过程稳定性指标：跌破 1.33 = 接近失控。'},
  {sec:'s-diag',title:'根因检索',tip:'已替你调出「越规格」事件的诊断单。看证据子图：根因<b>横跨光刻和刻蚀两条工艺段</b>——双层图检索对严重失效走 high 层，从终端质量特性反查，把两条链都找了出来，这正是普通向量检索会漏的全局关联。',act:selConflict},
  {sec:'s-diag',title:'三态裁决',tip:'因为检索到<b>两个互斥根因（证据冲突）</b>，确定性 gate 亮起黄灯 → 转人审。可回溯就放行、冲突就呼叫、幻觉就停线——这就是"确定性"，不让 AI 乱下结论。',act:selConflict},
- {sec:'s-shadow',title:'影子放权',tip:'比"检测后提醒人"多走一步：gate 判 A 的处置一开始也<b>只出建议、由人执行</b>（影子期），系统统计 AI 建议与产线实际走向的一致率——攒够样本且全部一致才放权，放权后复测未恢复<b>立即收权</b>。下方演进带就是本次快照里真实发生的放权全过程。'},
+ {sec:'s-shadow',title:'影子放权',tip:'比"检测后提醒人"多走一步：gate 判 A 的处置一开始也<b>只出建议、由人执行</b>（影子期），攒够样本且全部一致才放权。看下方演进带最右边——真实数据上，这类处置自主执行 3 次后第 4 次<b>复测未恢复，自主权被立即收回</b>，退回影子期重新累积。<b>放权阶梯是双向的</b>。'},
  {sec:'s-contrast',title:'对照实验',tip:'同一份数据、同一批事件：纯 LLM 直批有 <b>3 次无效处置下发后无人发现、1 次幻觉被执行</b>；加上三态 gate 后这两个数字都归零，代价是 27.3% 的事件转人审——用可控的人工介入换掉不可控的错误执行。'},
  {sec:'s-compare',title:'换脑对照',tip:'最后，<b>亲手点一下</b>「stub / DeepSeek」两个按钮：下方"即时对照"行会当场变化（上方工序 02/03 也会整体替换）。同数据同 gate 只换大脑，结果不同——<b>真模型在推理、真 gate 在兜底</b>。巡检完毕。',act:()=>renderLive()},
 ];
@@ -509,7 +515,34 @@ function renderCompare(){
   $('cmpStub').innerHTML=sum('stub'); $('cmpDs').innerHTML=sum('deepseek');
 }
 
-renderSteps(); renderContrast(); load();
+function renderMethod(){
+  const el=$('c-method'),S=window.SENS; if(!el)return;
+  if(!S){el.innerHTML='<div class="meta">门限敏感性数据未生成（运行 src/threshold_sensitivity.py）。</div>';return;}
+  const p=S['Cpk前提校验'],rows=S['逐门限结果'];
+  el.innerHTML=`
+    <div class="explain">
+      <p><b>① Cpk 的门限不是我们定的常数，它按特性等级取值。</b>依据 <b>IATF 16949:2016 条款 8.5.1.5</b>（特殊特性控制）与 <b>AIAG-VDA SPC 手册 6.2</b>：一般特性量产要求 Cpk ≥ <span class="mono">1.33</span>，安全与法规相关的特殊特性（CC/SC，如制动、转向件）优先要求 ≥ <span class="mono">1.67</span>。工艺本体里每个质量特性节点带特性等级属性，门限随之分档——迁到赛力斯时按质量部门的特殊特性清单标注即可，代码不猜。</p>
+      <p><b>② 门限抬高的代价必须先算清。</b>同一份数据、同一套控制限与裁决规则，只改门限：</p>
+    </div>
+    <table><thead><tr><th>Cpk 前瞻立案门限</th><th>检出事件</th><th>其中前瞻立案</th><th>需人工参与</th><th>裁决分布</th></tr></thead><tbody>
+      ${rows.map(r=>`<tr><td class="mono">${r['Cpk门限']}${r['Cpk门限']===1.33?'（一般特性）':'（安全特殊特性）'}</td>
+        <td class="mono">${r['检出事件数']}</td><td class="mono">${r['其中前瞻立案']}</td>
+        <td class="mono">${r['需人工参与的事件数']} 起</td>
+        <td>${Object.entries(r['分支分布']).map(([k,v])=>`<span class="andon ${AB(k)}"><i></i>${k}×${v}</span>`).join(' ')}</td></tr>`).join('')}
+    </tbody></table>
+    <p class="meta" style="margin-top:8px">门限从 1.33 抬到 1.67：${S['门限抬高的代价']['事件数变化']} 起事件、前瞻立案 ${S['门限抬高的代价']['前瞻立案变化']} 起、需人工参与 ${S['门限抬高的代价']['需人工参与']} 起。<b>更早介入的代价是更多人工工作量</b>，这条曲线交给质量部门按特性等级取点。</p>
+    <div class="disc" style="margin-top:14px"><b>③ 主动声明方法学局限：Cpk 的正态性前提在本数据上没通过。</b>
+      我们对被监控参数全序列做了 <b>${p['检验']}</b>（样本 ${p['样本量']}）：偏度 <span class="mono">${p['偏度']>0?'+':''}${p['偏度']}</span>、超值峰度 <span class="mono">${p['超值峰度']>0?'+':''}${p['超值峰度']}</span>、JB 统计量 <span class="mono">${p['JB统计量']}</span>，远超临界值 5.99 ——<b>拒绝正态假设</b>（该传感器序列重尾明显）。据此如实划清三条边界：
+      <ul style="margin:8px 0 4px;padding-left:20px">
+        <li><b>受影响</b>：Cpk 的绝对值与「越 3σ 控制限」（Nelson Rule 1）的标称误报率。3σ↔99.73% 是正态分布的性质，非正态下不成立。所以本 demo 里 1.33 / 1.67 是<b>演示用触发线</b>，不等价于 IATF 语义下的过程能力判定；按 AIAG-VDA SPC 6.2.3，生产环境须先做 Box-Cox 变换或改用非正态能力算法，之后这两个数才恢复标准含义。</li>
+        <li><b>不受影响</b>：前瞻立案所依赖的模式判定。Rule 2（连续 9 点位于中心线同侧）在中心线取<b>中位数</b>时，每点落在两侧的概率各为 50% 由中位数定义保证，与分布形状无关；Rule 3（连续 6 点单调）只用序关系。本 demo 的控制限正是用中位数作中心线。</li>
+        <li><b>仍待验证</b>：SPC 假设观测点相互独立，而传感器时间序列通常存在自相关，会使判异规则的实际误报率高于标称值。生产部署前应做自相关检验，必要时改用残差控制图。</li>
+      </ul>
+      交付的是机制与口径，参数与前提校正由质量部门按体系标定 —— 这三条局限写在这里，而不是等评委来问。
+    </div>`;
+}
+
+renderSteps(); renderContrast(); renderMethod(); load();
 if(!window.SNAP.deepseek||window.SNAP.deepseek.error){document.querySelector('[data-b=deepseek]').disabled=true;}
 </script>
 </body>
