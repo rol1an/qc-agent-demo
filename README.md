@@ -146,11 +146,21 @@ uv pip install numpy pandas networkx matplotlib
 cd src
 python run.py               # 端到端真闭环 CLI（默认 stub 后端，本地即可全跑通）
 python baseline_compare.py  # 对照实验：纯 LLM 直批 vs 三态 gate
+python threshold_sensitivity.py  # 门限敏感性 + Cpk 正态性前提校验
 python plot.py              # 生成真实数据 SPC 控制图 → ../control_chart.png
 python server.py            # 可视化前端 → 浏览器打开 http://127.0.0.1:8000
 
 # 工单真实派发到飞书多维表格（多维表格自动化 Webhook 触发器地址）
 QC_FEISHU_WEBHOOK=https://xxx.feishu.cn/base/automation/webhook/event/xxx python run.py
+```
+
+演示 / 录屏时用一键脚本，省得手敲长命令（在仓库根目录跑）：
+
+```bash
+./demo.sh              # 完整链路，不派单，最快
+./demo.sh --check      # 只验证飞书 webhook 通不通（演示前先跑这个）
+./demo.sh --feishu     # 完整链路 + 工单真实派发到飞书
+./demo.sh --contrast   # 对照实验 + 门限敏感性，出方案文档要的数字
 ```
 
 接**真实 LLM**（除下述环境变量外，代码零改动。key 只走环境变量，切勿写进文件）：
