@@ -57,7 +57,10 @@ h1 em{font-style:normal;color:var(--blue);border-bottom:5px solid rgba(30,61,143
 .stamp .big{font-size:14px;font-weight:700;display:block;margin:2px 0}
 .stamp::after{content:"";position:absolute;inset:6px;border:1px solid rgba(178,58,47,.55);border-radius:50%}
 @keyframes stampIn{0%{transform:rotate(-11deg) scale(2.1);opacity:0}70%{opacity:1}100%{transform:rotate(-11deg) scale(1)}}
-@media(max-width:760px){.stamp{width:92px;height:92px;font-size:9.5px;top:20px}.stamp .big{font-size:11px}}
+@media(max-width:760px){.stamp{width:92px;height:92px;font-size:9.5px;top:20px}.stamp .big{font-size:11px}
+  /* 盖章动画首帧是 scale(2.1)，窄屏下会把检验章推出视口，导致加载最初一瞬间页面可横向拖动。
+     裁在定位父级上（它不含 sticky 元素，故 overflow:hidden 安全，不会破坏导览条的 sticky）。 */
+  .sheet-head{overflow:hidden}}
 /* 基本信息栏（表格式，检验单气质） */
 .spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));border:1px solid var(--lineH);
   background:var(--paper2);margin-top:22px;font-size:12.5px}
