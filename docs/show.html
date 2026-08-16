@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>放映模式 · 主动管控设备质量风险的 AI 数字员工</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/ibm-plex-mono@latest/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/ibm-plex-mono@latest/600.css">
+<style>
+:root{
+  --paper:#F5F6F3; --paper2:#FDFDFC; --grid:rgba(30,61,143,.055);
+  --ink:#17233B; --ink2:#51607A;
+  --blue:#1E3D8F; --blue2:#3A5CC5; --lineH:#C9CFDC;
+  --ok:#0E8A4C; --amber:#B26E00; --red:#C0392B; --hold:#7C4DBE; --shd:#0F7F8C;
+  --stamp:#B23A2F;
+  --mono:'IBM Plex Mono',ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',Segoe UI,sans-serif;
+  /* 放映尺度：一切以 vmin 为基准，投影 / 录屏 / 全屏都自适应 */
+  --u:clamp(13px,1.35vmin,22px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:calc(var(--u)*1.55);line-height:1.6;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:calc(var(--u)*3) calc(var(--u)*3);
+}
+
+/* ============ 幻灯片容器 ============ */
+.deck{position:relative;height:100%;width:100%}
+.slide{
+  position:absolute;inset:0;display:none;
+  padding:calc(var(--u)*5) calc(var(--u)*7) calc(var(--u)*6);
+  flex-direction:column;justify-content:center;
+}
+.slide.on{display:flex;animation:slideIn .5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes slideIn{from{opacity:0;transform:translateY(calc(var(--u)*1.6))}to{opacity:1;transform:none}}
+
+/* 页眉：工序号 + 标题 + 右上角口径 */
+.hd{display:flex;align-items:baseline;gap:calc(var(--u)*1.4);margin-bottom:calc(var(--u)*2.4);flex-wrap:wrap}
+.hd .no{font-family:var(--mono);font-size:calc(var(--u)*1.5);font-weight:600;color:var(--blue);letter-spacing:.06em}
+.hd h2{font-size:calc(var(--u)*3.1);font-weight:600;letter-spacing:.01em}
+.hd .note{margin-left:auto;font-size:calc(var(--u)*1.35);color:var(--ink2);font-family:var(--mono)}
+
+/* 一句话主张：全片最大的字 */
+.claim{font-size:calc(var(--u)*2.5);line-height:1.5;max-width:52ch}
+.claim b{color:var(--blue);font-weight:600}
+.claim .hi{background:linear-gradient(transparent 62%,rgba(178,58,47,.22) 0);font-weight:600}
+
+/* 巨型数字 */
+.figs{display:flex;gap:calc(var(--u)*5);flex-wrap:wrap;margin:calc(var(--u)*2) 0}
+.fig .n{font-family:var(--mono);font-weight:600;font-size:calc(var(--u)*6.2);line-height:1;color:var(--blue);letter-spacing:-.02em}
+.fig .n.red{color:var(--stamp)} .fig .n.ok{color:var(--ok)} .fig .n.shd{color:var(--shd)}
+.fig .k{font-size:calc(var(--u)*1.35);color:var(--ink2);margin-top:calc(var(--u)*.6);letter-spacing:.03em}
+
+/* 说明脚注 */
+.foot{margin-top:auto;padding-top:calc(var(--u)*1.6);border-top:1px solid var(--lineH);
+  font-size:calc(var(--u)*1.25);color:var(--ink2);display:flex;gap:calc(var(--u)*2.5);flex-wrap:wrap}
+.foot .mono{font-family:var(--mono)}
+
+/* ============ 封面 ============ */
+.cover{justify-content:center}
+.cover .eyebrow{font-family:var(--mono);font-size:calc(var(--u)*1.45);color:var(--blue);letter-spacing:.14em;margin-bottom:calc(var(--u)*2)}
+.cover h1{font-size:calc(var(--u)*5.4);line-height:1.2;font-weight:600;letter-spacing:.01em;max-width:24ch}
+.cover h1 em{font-style:normal;color:var(--blue)}
+.cover .sub{margin-top:calc(var(--u)*2.2);font-size:calc(var(--u)*2);color:var(--ink2);max-width:44ch}
+.stamp{
+  position:absolute;right:calc(var(--u)*7);top:50%;transform:translateY(-50%) rotate(-13deg);
+  width:calc(var(--u)*15);height:calc(var(--u)*15);border:calc(var(--u)*.42) solid var(--stamp);border-radius:50%;
+  color:var(--stamp);font-family:var(--mono);font-size:calc(var(--u)*1.15);line-height:1.45;letter-spacing:.1em;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;opacity:.92;
+  animation:stampIn .75s cubic-bezier(.2,1.5,.4,1) .35s both}
+.stamp .big{font-size:calc(var(--u)*1.9);font-weight:700;margin:calc(var(--u)*.3) 0}
+@keyframes stampIn{from{opacity:0;transform:translateY(-50%) rotate(-13deg) scale(1.9)}to{opacity:.92;transform:translateY(-50%) rotate(-13deg) scale(1)}}
+
+/* ============ 原始数据流 ============ */
+.rawwrap{flex:1;min-height:0;display:grid;grid-template-columns:1.55fr 1fr;gap:calc(var(--u)*3.2);align-items:stretch}
+.rawbox{background:var(--paper2);border:1px solid var(--lineH);border-radius:calc(var(--u)*.4);
+  overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.rawbox .cap{padding:calc(var(--u)*.9) calc(var(--u)*1.3);border-bottom:1px solid var(--lineH);
+  font-family:var(--mono);font-size:calc(var(--u)*1.2);color:var(--ink2);display:flex;gap:calc(var(--u)*1.2);align-items:center}
+.rawbox .cap .dot{width:calc(var(--u)*.7);height:calc(var(--u)*.7);border-radius:50%;background:var(--ok);
+  animation:blink 1.1s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+#rawfeed{flex:1;overflow:hidden;font-family:var(--mono);font-size:calc(var(--u)*1.12);line-height:1.85;padding:calc(var(--u)*.8) calc(var(--u)*1.3)}
+#rawfeed .r{display:flex;gap:calc(var(--u)*1.1);white-space:nowrap;animation:rowIn .3s ease both}
+#rawfeed .r .ts{color:var(--blue);width:15ch;flex:none}
+#rawfeed .r .c{color:var(--ink2);width:9ch;flex:none;overflow:hidden}
+#rawfeed .r .c.nan{color:var(--amber);opacity:.75}
+#rawfeed .r .f{margin-left:auto;font-weight:600;flex:none}
+#rawfeed .r .f.bad{color:var(--stamp)} #rawfeed .r .f.good{color:var(--ok);opacity:.5}
+#rawfeed .r.hot{background:rgba(30,61,143,.06)}
+@keyframes rowIn{from{opacity:0;transform:translateX(calc(var(--u)*-1.2))}to{opacity:1;transform:none}}
+.rawside{display:flex;flex-direction:column;gap:calc(var(--u)*1.6);justify-content:center}
+.rawside .item{border-left:calc(var(--u)*.28) solid var(--blue);padding-left:calc(var(--u)*1.3)}
+.rawside .item .n{font-family:var(--mono);font-size:calc(var(--u)*3.4);font-weight:600;line-height:1.1}
+.rawside .item .k{font-size:calc(var(--u)*1.3);color:var(--ink2)}
+
+/* ============ 控制图 ============ */
+.chartwrap{flex:1;min-height:0;display:flex;flex-direction:column;gap:calc(var(--u)*1.4)}
+#chart{flex:1;width:100%;min-height:0}
+.legend{display:flex;gap:calc(var(--u)*2.4);font-size:calc(var(--u)*1.3);color:var(--ink2);flex-wrap:wrap;align-items:center}
+.legend i{display:inline-block;width:calc(var(--u)*1.5);height:0;border-top-width:calc(var(--u)*.22);border-top-style:solid;
+  vertical-align:middle;margin-right:calc(var(--u)*.5)}
+.legend .tri{color:var(--stamp);font-size:calc(var(--u)*1.5)}
+
+/* ============ 证据图 ============ */
+#graph{flex:1;min-height:0;width:100%}
+.gnode circle{transition:opacity .4s,r .4s}
+.gnode text{font-family:var(--sans);font-size:calc(var(--u)*1.22);fill:var(--ink)}
+
+/* ============ 三态灯 ============ */
+.lamps{display:flex;gap:calc(var(--u)*2.6);margin:calc(var(--u)*1.5) 0 calc(var(--u)*2.5)}
+.lamp{flex:1;border:1px solid var(--lineH);border-radius:calc(var(--u)*.4);padding:calc(var(--u)*1.8);
+  background:var(--paper2);opacity:.32;transition:opacity .45s,box-shadow .45s,transform .45s}
+.lamp.on{opacity:1;transform:translateY(calc(var(--u)*-.5))}
+.lamp .bulb{width:calc(var(--u)*2.4);height:calc(var(--u)*2.4);border-radius:50%;background:var(--lineH);margin-bottom:calc(var(--u)*1)}
+.lamp.on.a{box-shadow:0 0 0 2px var(--ok) inset} .lamp.on.a .bulb{background:var(--ok);box-shadow:0 0 calc(var(--u)*2) var(--ok)}
+.lamp.on.b{box-shadow:0 0 0 2px var(--amber) inset} .lamp.on.b .bulb{background:var(--amber);box-shadow:0 0 calc(var(--u)*2) var(--amber)}
+.lamp.on.c{box-shadow:0 0 0 2px var(--stamp) inset} .lamp.on.c .bulb{background:var(--stamp);box-shadow:0 0 calc(var(--u)*2) var(--stamp)}
+.lamp .t{font-size:calc(var(--u)*1.85);font-weight:600} .lamp .d{font-size:calc(var(--u)*1.3);color:var(--ink2);margin-top:calc(var(--u)*.5)}
+
+/* ============ 放权阶梯 ============ */
+.ladder{display:flex;align-items:flex-end;gap:calc(var(--u)*1.1);flex:1;min-height:0;padding:calc(var(--u)*2) 0}
+.rung{flex:1;display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*.9);opacity:0;
+  transform:translateY(calc(var(--u)*1.6))}
+.rung.in{opacity:1;transform:none;transition:opacity .45s,transform .45s}
+.rung .bar{width:100%;border-radius:calc(var(--u)*.3) calc(var(--u)*.3) 0 0;background:var(--shd);
+  transition:height .5s cubic-bezier(.2,.8,.2,1),background .4s}
+.rung.auto .bar{background:var(--ok)} .rung.revoke .bar{background:var(--stamp)}
+.rung .lb{font-family:var(--mono);font-size:calc(var(--u)*1.12);color:var(--ink2);text-align:center;line-height:1.35}
+.rung.revoke .lb{color:var(--stamp);font-weight:600}
+.rung .tick{font-size:calc(var(--u)*1.5)}
+.revoke-call{margin-top:calc(var(--u)*1.2);font-size:calc(var(--u)*2.1);color:var(--stamp);font-weight:600;
+  opacity:0;transition:opacity .5s}
+.revoke-call.in{opacity:1}
+
+/* ============ 对照计数器 ============ */
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:calc(var(--u)*3);align-items:center;flex:1;min-height:0}
+.vsbox{border:1px solid var(--lineH);border-radius:calc(var(--u)*.4);padding:calc(var(--u)*2.4);background:var(--paper2);height:100%;
+  display:flex;flex-direction:column;justify-content:center;gap:calc(var(--u)*1.6)}
+.vsbox.bad{border-color:rgba(192,57,43,.4)} .vsbox.good{border-color:rgba(14,138,76,.45)}
+.vsbox h3{font-size:calc(var(--u)*1.7);font-weight:600;color:var(--ink2)}
+.vsbox .line{display:flex;align-items:baseline;gap:calc(var(--u)*1.1)}
+.vsbox .line .n{font-family:var(--mono);font-size:calc(var(--u)*4);font-weight:600;line-height:1;min-width:2.4ch}
+.vsbox.bad .line .n{color:var(--stamp)} .vsbox.good .line .n{color:var(--ok)}
+.vsbox .line .k{font-size:calc(var(--u)*1.4);color:var(--ink2)}
+.vsarrow{font-size:calc(var(--u)*3);color:var(--blue);opacity:.5}
+
+/* ============ 导航 ============ */
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:calc(var(--u)*1.2);
+  padding:calc(var(--u)*1) calc(var(--u)*2.4);background:linear-gradient(transparent,rgba(245,246,243,.96) 42%);
+  font-size:calc(var(--u)*1.2);color:var(--ink2);z-index:9}
+.dots{display:flex;gap:calc(var(--u)*.65)}
+.dots b{width:calc(var(--u)*1.5);height:calc(var(--u)*.42);border-radius:calc(var(--u)*.2);background:var(--lineH);cursor:pointer;transition:background .3s,width .3s}
+.dots b.on{background:var(--blue);width:calc(var(--u)*3.4)}
+.nav .hint{margin-left:auto;font-family:var(--mono);letter-spacing:.04em;opacity:.75}
+.nav .hint kbd{border:1px solid var(--lineH);border-bottom-width:2px;border-radius:3px;padding:0 calc(var(--u)*.45);
+  font-family:var(--mono);background:var(--paper2)}
+.nav a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(30,61,143,.3)}
+
+@media(max-width:860px){
+  .rawwrap,.vs{grid-template-columns:1fr}
+  .vsarrow{display:none}
+  .stamp{display:none}
+  .slide{padding:calc(var(--u)*4) calc(var(--u)*3) calc(var(--u)*6)}
+}
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- 0 封面 -->
+<section class="slide cover on">
+  <div class="eyebrow">安灯常绿队 · 赛力斯集团命题</div>
+  <h1>先影子，后放权<br><em>主动管控设备质量风险的 AI 数字员工</em></h1>
+  <div class="sub">不止发现质量风险，还能在人的监督下学会自己处置——自主执行权由一致率挣得，一次失败即刻收回。</div>
+  <div class="stamp">质 量 检 验<span class="big">合 格</span>QC PASSED</div>
+  <div class="foot"><span class="mono">全部数字来自真实公开工业数据上的真实计算</span></div>
+</section>
+
+<!-- 1 原始数据 -->
+<section class="slide" data-anim="raw">
+  <div class="hd"><span class="no">工序 01</span><h2>数据不是编的</h2>
+    <span class="note">UCI SECOM · 任何人可下载核对</span></div>
+  <div class="rawwrap">
+    <div class="rawbox">
+      <div class="cap"><span class="dot"></span><span id="rawcap">读取 data/secom.data …</span></div>
+      <div id="rawfeed"></div>
+    </div>
+    <div class="rawside">
+      <div class="item"><div class="n" id="f-rows">0</div><div class="k">批次（行）</div></div>
+      <div class="item"><div class="n" id="f-cols">0</div><div class="k">传感器通道（列）</div></div>
+      <div class="item"><div class="n" id="f-fail" style="color:var(--stamp)">0</div><div class="k">不合格批次</div></div>
+      <div class="item"><div class="n" style="font-size:calc(var(--u)*1.9)" id="f-span">—</div><div class="k">时间跨度</div></div>
+    </div>
+  </div>
+  <div class="foot"><span>左侧是原始文件里逐字节读出的真实数值</span>
+    <span class="mono">NaN = 原始缺失，未做美化</span></div>
+</section>
+
+<!-- 2 过程监控 -->
+<section class="slide" data-anim="chart">
+  <div class="hd"><span class="no">工序 02</span><h2>数值还没超差，就已经立案</h2>
+    <span class="note">Nelson 判异规则 + 滚动 Cpk</span></div>
+  <div class="chartwrap">
+    <svg id="chart" viewBox="0 0 1000 340" preserveAspectRatio="none"></svg>
+    <div class="legend">
+      <span><i style="border-color:var(--blue)"></i>过程测量值</span>
+      <span><i style="border-color:var(--stamp);border-top-style:dashed"></i>规格限 USL / LSL</span>
+      <span><i style="border-color:var(--ink2);border-top-style:dotted"></i>控制限 UCL / LCL</span>
+      <span class="tri">▲ <span style="color:var(--ink2)">前瞻立案（仍在规格内）</span></span>
+    </div>
+  </div>
+  <div class="foot"><span class="mono" id="chart-stat">—</span>
+    <span>连续 9 点同侧、连续 6 点单调 —— 趋势刚起来就立案，不等缺陷发生</span></div>
+</section>
+
+<!-- 3 根因检索 -->
+<section class="slide" data-anim="graph">
+  <div class="hd"><span class="no">工序 03</span><h2>根因横跨两条工艺段</h2>
+    <span class="note">双层图检索 · 结论可回溯到具体节点</span></div>
+  <svg id="graph" viewBox="0 0 1000 380"></svg>
+  <div class="foot"><span>从终端质量特性反查上游，一次遍历把两条链都带出来</span>
+    <span class="mono">这正是向量检索容易漏的全局关联</span></div>
+</section>
+
+<!-- 4 三态裁决 -->
+<section class="slide" data-anim="gate">
+  <div class="hd"><span class="no">工序 04</span><h2>敢不敢说"我不知道"</h2>
+    <span class="note">确定性代码裁决 · 同输入永远同输出</span></div>
+  <div class="lamps">
+    <div class="lamp a" id="lamp-a"><div class="bulb"></div><div class="t">放行</div>
+      <div class="d">证据可回溯且不冲突<br>自主执行 + 强制复测</div></div>
+    <div class="lamp b" id="lamp-b"><div class="bulb"></div><div class="t">呼叫</div>
+      <div class="d">证据冲突或置信不足<br>转人审，附候选与证据链</div></div>
+    <div class="lamp c" id="lamp-c"><div class="bulb"></div><div class="t">停线</div>
+      <div class="d">根因不在工艺本体内<br>判为幻觉，不下发任何动作</div></div>
+  </div>
+  <div class="claim" id="gate-say">本次检索到 <b>两个互斥根因</b>，代码判定证据冲突 —— <span class="hi">直接拒答、转人审</span>。</div>
+  <div class="foot"><span>判定、门限、权限这三件事，<b>一行 AI 都不参与</b></span></div>
+</section>
+
+<!-- 5 影子放权 -->
+<section class="slide" data-anim="ladder">
+  <div class="hd"><span class="no">工序 05</span><h2>自主权是挣来的，也会被收回</h2>
+    <span class="note">真实数据上双向走完一个来回 · 无人工干预</span></div>
+  <div class="ladder" id="ladder"></div>
+  <div class="revoke-call" id="revoke-call">第 634 批次自主执行后复测未恢复 —— 自主权当场收回，退回影子期</div>
+  <div class="foot"><span>收权判据是复测数据，不是模型自评</span>
+    <span class="mono">收权后一致率清零重攒 · 自主权不跨工序转移</span></div>
+</section>
+
+<!-- 6 对照实验 -->
+<section class="slide" data-anim="vs">
+  <div class="hd"><span class="no">工序 06</span><h2>改变的是哪个关键结果</h2>
+    <span class="note">同数据 · 同事件 · 只差一道校验门</span></div>
+  <div class="vs">
+    <div class="vsbox bad"><h3>纯 LLM 直批（传统 Agent 做法）</h3>
+      <div class="line"><span class="n" id="v-a1">0</span><span class="k">起无效处置下发后<b>无人发现</b></span></div>
+      <div class="line"><span class="n" id="v-a2">0</span><span class="k">起幻觉根因被真的执行</span></div></div>
+    <div class="vsarrow">→</div>
+    <div class="vsbox good"><h3>本方案（三态门 + 复测闭环）</h3>
+      <div class="line"><span class="n" id="v-b1">0</span><span class="k">起无效处置无人发现</span></div>
+      <div class="line"><span class="n" id="v-b2">0</span><span class="k">起幻觉被执行</span></div></div>
+  </div>
+  <div class="foot"><span>代价是 <b>27.3%</b> 的事件转人工复核 —— 用可控的人工介入，换掉不可控的错误执行</span></div>
+</section>
+
+<!-- 7 方法学前提 -->
+<section class="slide" data-anim="method">
+  <div class="hd"><span class="no">附录</span><h2>我们主动公布了自己方法的边界</h2>
+    <span class="note">AIAG-VDA SPC 手册 6.2.3</span></div>
+  <div class="figs">
+    <div class="fig"><div class="n red" id="m-jb">0</div><div class="k">Jarque-Bera 统计量</div></div>
+    <div class="fig"><div class="n">5.99</div><div class="k">5% 显著性临界值</div></div>
+    <div class="fig"><div class="n red" style="font-size:calc(var(--u)*3.6)">拒绝正态</div><div class="k">过程能力指数的前提在本数据上不成立</div></div>
+  </div>
+  <div class="claim">工业 AI 方案里，"我们的指标在这份数据上其实不满足前提"这句话几乎没人主动写。<br>
+    <span class="hi">写出来，意味着交付的是可被质量部门审计的方法，不是报出漂亮数字的黑盒。</span></div>
+  <div class="foot"><span>受影响：能力指数绝对值、越 3σ 的标称误报率</span>
+    <span>不受影响：连续同侧与单调趋势两条前瞻立案规则</span></div>
+</section>
+
+<!-- 8 收尾 -->
+<section class="slide cover" data-anim="end">
+  <div class="eyebrow">迁移到赛力斯产线</div>
+  <h1>只需换两处：<em>数据接口</em>与<em>工艺本体</em></h1>
+  <div class="sub">监控、检索、裁决、放权 —— 一行不改。领域知识全部集中在这两处，其余组件不含任何领域常量。</div>
+  <div class="foot"><span class="mono">比传统 Agent 多走一步 —— 先影子，后放权</span></div>
+</section>
+
+</div>
+
+<div class="nav">
+  <div class="dots" id="dots"></div>
+  <span class="hint"><kbd>←</kbd><kbd>→</kbd> 翻页 · <kbd>R</kbd> 重放本页 · <a href="index.html">完整检验记录 ↗</a></span>
+</div>
+
+<script>
+/* ============ 幻灯片引擎 ============ */
+const slides=[...document.querySelectorAll('.slide')];
+const dots=document.getElementById('dots');
+let cur=0;
+slides.forEach((_,i)=>{const b=document.createElement('b');b.onclick=()=>go(i);dots.appendChild(b)});
+const paint=()=>[...dots.children].forEach((b,i)=>b.classList.toggle('on',i===cur));
+
+function go(i){
+  if(i<0||i>=slides.length)return;
+  slides[cur].classList.remove('on');
+  cur=i; slides[cur].classList.add('on'); paint(); play();
+}
+function play(){
+  const a=slides[cur].dataset.anim;
+  if(a && ANIM[a]) ANIM[a]();
+}
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(cur+1)}
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(cur-1)}
+  else if(e.key==='r'||e.key==='R'){play()}
+  else if(/^[1-9]$/.test(e.key)){go(+e.key-1)}
+  else if(e.key==='Home'){go(0)}
+});
+addEventListener('click',e=>{if(!e.target.closest('.nav'))go(cur+1)});
+paint();
+
+/* ============ 数据 ============ */
+let RAW=null,SNAP=null,CONTRAST=null,SENS=null;
+const timers=[];
+const clearTimers=()=>{while(timers.length){const h=timers.pop();clearTimeout(h);clearInterval(h)}};
+const at=(ms,fn)=>timers.push(setTimeout(fn,ms));
+
+/* 数字滚动 */
+function countTo(el,to,ms=900,fmt=n=>n.toLocaleString()){
+  const t0=performance.now();
+  let done=false;
+  const finish=()=>{if(!done){done=true;el.textContent=fmt(to)}};
+  const step=now=>{
+    const p=Math.min(1,(now-t0)/ms), e=1-Math.pow(1-p,3);
+    if(p>=1)return finish();
+    el.textContent=fmt(Math.round(to*e));
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  setTimeout(finish,ms+120);          // rAF 被节流时的兜底
+}
+
+const ANIM={};
+
+/* ---- 原始数据流 ---- */
+ANIM.raw=()=>{
+  clearTimers();
+  const feed=document.getElementById('rawfeed');
+  if(!RAW){feed.innerHTML='<div class="r">加载中…</div>';return}
+  feed.innerHTML='';
+  document.getElementById('rawcap').textContent=
+    `data/secom.data — 显示前 ${RAW.shown_cols} 列 / 共 ${RAW.total_cols} 列`;
+  const ym=s=>{const[d,m,y]=s.split(' ')[0].split('/');return{y,m:+m}};
+  const a=ym(RAW.ts_start),b=ym(RAW.ts_end);
+  document.getElementById('f-span').textContent=`${a.y} 年 ${a.m}–${b.m} 月`;
+  countTo(document.getElementById('f-rows'),RAW.total_rows);
+  countTo(document.getElementById('f-cols'),RAW.total_cols);
+  countTo(document.getElementById('f-fail'),RAW.fail_count,1300);
+
+  const H=feed.clientHeight||400, rowH=Math.max(18,parseFloat(getComputedStyle(feed).lineHeight)||24);
+  const cap=Math.max(6,Math.floor(H/rowH)-1);
+  RAW.rows.forEach((r,i)=>at(120+i*95,()=>{
+    const d=document.createElement('div');
+    d.className='r'+(r.fail?' hot':'');
+    d.innerHTML=`<span class="ts">${r.ts.slice(0,-3)}</span>`+
+      r.v.map(v=>`<span class="c${v==='NaN'?' nan':''}">${v}</span>`).join('')+
+      `<span class="f ${r.fail?'bad':'good'}">${r.fail?'不合格':'合格'}</span>`;
+    feed.appendChild(d);
+    while(feed.children.length>cap)feed.removeChild(feed.firstChild);
+  }));
+};
+
+/* ---- 控制图逐点绘制 ---- */
+ANIM.chart=()=>{
+  clearTimers();
+  const svg=document.getElementById('chart');
+  svg.innerHTML='';
+  if(!SNAP){return}
+  const S=SNAP.spc, ser=S.series, W=1000,H=340,PAD=14;
+  const lo=Math.min(S.lsl,...ser), hi=Math.max(S.usl,...ser);
+  const x=i=>PAD+i*(W-PAD*2)/(ser.length-1);
+  const y=v=>H-PAD-(v-lo)/(hi-lo)*(H-PAD*2);
+  const NS='http://www.w3.org/2000/svg';
+  const line=(v,color,dash)=>{
+    const l=document.createElementNS(NS,'line');
+    l.setAttribute('x1',0);l.setAttribute('x2',W);l.setAttribute('y1',y(v));l.setAttribute('y2',y(v));
+    l.setAttribute('stroke',color);l.setAttribute('stroke-width',1.6);
+    if(dash)l.setAttribute('stroke-dasharray',dash);
+    svg.appendChild(l);
+  };
+  line(S.usl,'var(--stamp)','9 6');line(S.lsl,'var(--stamp)','9 6');
+  line(S.ucl,'var(--ink2)','2 5');line(S.lcl,'var(--ink2)','2 5');
+  line(S.cl,'var(--blue)','');
+
+  const path=document.createElementNS(NS,'path');
+  path.setAttribute('fill','none');path.setAttribute('stroke','var(--blue)');
+  path.setAttribute('stroke-width',1.9);path.setAttribute('opacity',.85);
+  svg.appendChild(path);
+
+  const evs=SNAP.events||[];
+  const DUR=2600, N=ser.length, FPS=33;
+  const shown=new Set();
+  let drawn=0;
+  const tri=i=>{
+    const e=evs.find(v=>v.idx===i); if(!e||shown.has(i))return; shown.add(i);
+    const g=document.createElementNS(NS,'polygon'),px=x(i),py=y(ser[i]);
+    g.setAttribute('points',`${px},${py-13} ${px-8},${py+2} ${px+8},${py+2}`);
+    g.setAttribute('fill',e.proactive?'var(--stamp)':'var(--amber)');
+    g.style.animation='stampIn .45s cubic-bezier(.2,1.5,.4,1) both';
+    svg.appendChild(g);
+  };
+  const render=upto=>{
+    let d='';
+    for(let i=0;i<upto;i++)d+=(i?'L':'M')+x(i).toFixed(1)+' '+y(ser[i]).toFixed(1);
+    path.setAttribute('d',d);
+    for(let i=drawn;i<upto;i++)tri(i);
+    drawn=upto;
+    document.getElementById('chart-stat').textContent=
+      `批次 ${drawn} / ${N} · 检出判异 ${evs.filter(e=>e.idx<=drawn).length} 起 · `+
+      `其中前瞻立案 ${evs.filter(e=>e.idx<=drawn&&e.proactive).length} 起`;
+  };
+  // setInterval 驱动（rAF 在后台标签/无头环境不保证触发），到点强制补完终态
+  const t0=Date.now();
+  const iv=setInterval(()=>{
+    const p=Math.min(1,(Date.now()-t0)/DUR);
+    render(Math.max(drawn,Math.floor(p*N)));
+    if(p>=1)clearInterval(iv);
+  },FPS);
+  timers.push(iv);
+  timers.push(setTimeout(()=>{clearInterval(iv);if(drawn<N)render(N)},DUR+400));
+};
+
+/* ---- 证据图逐节点点亮 ---- */
+ANIM.graph=()=>{
+  clearTimers();
+  const svg=document.getElementById('graph');svg.innerHTML='';
+  if(!SNAP)return;
+  const ev=(SNAP.events||[]).find(e=>e.retrieval&&e.retrieval.level==='high')||SNAP.events[0];
+  const g=ev.retrieval.graph, NS='http://www.w3.org/2000/svg';
+  const LAYER={sensor_cluster:0,process:1,kcc:2,mechanism:3,mode:4,kpc:5,disposition:6,case:7};
+  const COLOR={kpc:'#B23A2F',mode:'#B26E00',mechanism:'#7C4DBE',kcc:'#1E3D8F',
+               process:'#51607A',disposition:'#0E8A4C',sensor_cluster:'#51607A',case:'#0F7F8C'};
+  const byL={};
+  g.nodes.forEach(n=>{const l=LAYER[n.type]??3;(byL[l]=byL[l]||[]).push(n)});
+  const Ls=Object.keys(byL).map(Number).sort((a,b)=>a-b);
+  const W=1000,H=380, pos={};
+  Ls.forEach((l,li)=>{
+    const col=byL[l], cx=70+li*(W-140)/Math.max(1,Ls.length-1);
+    col.forEach((n,ni)=>{pos[n.id]={x:cx,y:H/2+(ni-(col.length-1)/2)*76,t:n.type}});
+  });
+  // 边
+  const edges=(g.edges||[]);
+  edges.forEach((e,i)=>{
+    const a=pos[e.s],b=pos[e.t];
+    if(!a||!b)return;
+    const l=document.createElementNS(NS,'line');
+    l.setAttribute('x1',a.x);l.setAttribute('y1',a.y);l.setAttribute('x2',b.x);l.setAttribute('y2',b.y);
+    l.setAttribute('stroke','var(--lineH)');l.setAttribute('stroke-width',1.8);l.setAttribute('opacity',0);
+    svg.appendChild(l);
+    at(300+i*110,()=>{l.style.transition='opacity .4s';l.setAttribute('opacity',.9)});
+  });
+  // 节点
+  g.nodes.forEach((n,i)=>{
+    const p=pos[n.id],gr=document.createElementNS(NS,'g');
+    gr.setAttribute('class','gnode');gr.setAttribute('opacity',0);
+    const c=document.createElementNS(NS,'circle');
+    c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);c.setAttribute('r',n.root?13:9);
+    c.setAttribute('fill',COLOR[n.type]||'#51607A');
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',p.x);t.setAttribute('y',p.y-19);t.setAttribute('text-anchor','middle');
+    t.textContent=n.id;
+    gr.appendChild(c);gr.appendChild(t);svg.appendChild(gr);
+    at(240+i*150,()=>{gr.style.transition='opacity .45s';gr.setAttribute('opacity',1)});
+  });
+};
+
+/* ---- 三态灯 ---- */
+ANIM.gate=()=>{
+  clearTimers();
+  const A=document.getElementById('lamp-a'),B=document.getElementById('lamp-b'),C=document.getElementById('lamp-c');
+  [A,B,C].forEach(l=>l.classList.remove('on'));
+  const say=document.getElementById('gate-say');
+  at(350,()=>A.classList.add('on'));
+  at(1500,()=>{A.classList.remove('on');B.classList.add('on');
+    say.innerHTML='本次检索到 <b>两个互斥根因</b>，代码判定证据冲突 —— <span class="hi">直接拒答、转人审</span>。'});
+  at(3400,()=>{B.classList.remove('on');C.classList.add('on');
+    const h=SNAP&&SNAP.halluc;
+    say.innerHTML=`再故意让模型幻觉出一个本体里不存在的根因 <b>『${h?h.cause:'等离子喷涂枪老化'}』</b> —— <span class="hi">当场拦截，不下发任何动作</span>。`});
+};
+
+/* ---- 放权阶梯 ---- */
+ANIM.ladder=()=>{
+  clearTimers();
+  const box=document.getElementById('ladder');box.innerHTML='';
+  document.getElementById('revoke-call').classList.remove('in');
+  const STEPS=[
+    {b:'#108',s:'影子建议',k:'shd',h:34},{b:'#133',s:'影子建议',k:'shd',h:34},
+    {b:'#166',s:'影子建议 → 达标放权',k:'shd',h:44},
+    {b:'#196',s:'自主执行 · 复测恢复',k:'auto',h:78},
+    {b:'#421',s:'自主执行 · 复测恢复',k:'auto',h:78},
+    {b:'#475',s:'自主执行 · 复测恢复',k:'auto',h:78},
+    {b:'#634',s:'自主执行 · 复测未恢复',k:'revoke',h:78},
+    {b:'#644',s:'退回影子期 · 重新累积',k:'shd',h:30},
+  ];
+  STEPS.forEach((s,i)=>{
+    const d=document.createElement('div');
+    d.className='rung '+(s.k==='auto'?'auto':s.k==='revoke'?'revoke':'');
+    d.innerHTML=`<div class="tick">${s.k==='revoke'?'⚖':s.k==='auto'?'✓':'👁'}</div>
+      <div class="bar" style="height:0"></div>
+      <div class="lb">${s.b}<br>${s.s}</div>`;
+    box.appendChild(d);
+    at(300+i*430,()=>{
+      d.classList.add('in');
+      requestAnimationFrame(()=>d.querySelector('.bar').style.height=s.h+'%');
+      if(s.k==='revoke')at(500,()=>document.getElementById('revoke-call').classList.add('in'));
+    });
+  });
+};
+
+/* ---- 对照计数器 ---- */
+ANIM.vs=()=>{
+  clearTimers();
+  const C=CONTRAST||{};
+  const a=C['对照组_纯LLM直批']||{},b=C['实验组_三态gate']||{};
+  const a1=a['无效下发_无机制发现']??3, a2=a['halluc_exec']??1;
+  const b1=b['无效下发_无机制发现']??0, b2=b['halluc_exec']??0;
+  at(300,()=>countTo(document.getElementById('v-a1'),a1,700,n=>n));
+  at(700,()=>countTo(document.getElementById('v-a2'),a2,600,n=>n));
+  at(1700,()=>countTo(document.getElementById('v-b1'),b1,700,n=>n));
+  at(2100,()=>countTo(document.getElementById('v-b2'),b2,600,n=>n));
+};
+
+/* ---- 方法学 ---- */
+ANIM.method=()=>{
+  clearTimers();
+  const jb=(SENS&&(SENS['Cpk前提校验']||{})['JB统计量'])||260069.6;
+  countTo(document.getElementById('m-jb'),Math.round(jb),1400);
+};
+
+/* ============ 载入数据 ============ */
+Promise.all([
+  fetch('rawslice.json').then(r=>r.json()).catch(()=>null),
+  fetch('snapshots.json').then(r=>r.json()).catch(()=>null),
+  fetch('contrast.json').then(r=>r.json()).catch(()=>null),
+  fetch('sensitivity.json').then(r=>r.json()).catch(()=>null),
+]).then(([raw,snap,con,sen])=>{
+  RAW=raw; SNAP=snap&&(snap.stub||snap); CONTRAST=con; SENS=sen;
+  play();
+});
+</script>
+</body>
+</html>
