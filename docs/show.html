@@ -381,7 +381,7 @@ body{
 
 <div class="nav">
   <div class="dots" id="dots"></div>
-  <span class="hint"><kbd>←</kbd><kbd>→</kbd> 翻页 · <kbd>R</kbd> 重放本页 · <a href="index.html">完整检验记录 ↗</a></span>
+  <span class="hint"><kbd>←</kbd><kbd>→</kbd> 翻页 · <kbd>R</kbd> 重放本页动画 · <a href="index.html">完整检验记录 ↗</a></span>
 </div>
 
 <script>
@@ -451,7 +451,7 @@ ANIM.raw=()=>{
 
   const H=feed.clientHeight||400, rowH=Math.max(18,parseFloat(getComputedStyle(feed).lineHeight)||24);
   const cap=Math.max(6,Math.floor(H/rowH)-1);
-  RAW.rows.forEach((r,i)=>at(120+i*95,()=>{
+  RAW.rows.forEach((r,i)=>at(160+i*150,()=>{
     const d=document.createElement('div');
     d.className='r'+(r.fail?' hot':'');
     d.innerHTML=`<span class="ts">${r.ts.slice(0,-3)}</span>`+
@@ -490,7 +490,7 @@ ANIM.chart=()=>{
   svg.appendChild(path);
 
   const evs=SNAP.events||[];
-  const DUR=2600, N=ser.length, FPS=33;
+  const DUR=6000, N=ser.length, FPS=33;
   const shown=new Set();
   let drawn=0;
   const tri=i=>{
@@ -543,12 +543,12 @@ ANIM.graph=()=>{
         if(i){
           const r=document.createElement('span'); r.className='rel';
           r.textContent=m[path[i-1]+'\u0000'+n]||'关联'; row.appendChild(r);
-          at(delay,()=>r.classList.add('in')); delay+=180;
+          at(delay,()=>r.classList.add('in')); delay+=300;
         }
         const h=document.createElement('span');
         h.className='hop'+(i===0?' root':i===path.length-1?' term':'');
         h.textContent=n; row.appendChild(h);
-        at(delay,()=>h.classList.add('in')); delay+=180;
+        at(delay,()=>h.classList.add('in')); delay+=300;
       });
       delay+=120;
     });
@@ -615,7 +615,7 @@ ANIM.serres=()=>{
         if(i){PATH[i-1].forEach(pk=>edge(pos[i-1][pk],cur,COLS[i].c))}
       });
     });
-    d+=520;
+    d+=900;
   });
   at(d+150,()=>{
     cap.innerHTML='一条故障工单进来，沿结构走四跳 —— 从 1287 条失效模式收敛到 <b>中位 3 条候选</b>，'+
@@ -640,7 +640,7 @@ ANIM.bars=()=>{
     d.className='bar-row'+(r.win?' win':'');
     d.innerHTML=`<span class="bl">${r.k}</span><span class="bt"><span class="bf"></span></span><span class="bn">${r.v}%</span>`;
     box.appendChild(d);
-    at(350+i*300,()=>d.querySelector('.bf').style.width=r.v+'%');
+    at(400+i*550,()=>d.querySelector('.bf').style.width=r.v+'%');
   });
 };
 
@@ -650,10 +650,10 @@ ANIM.gate=()=>{
   const A=document.getElementById('lamp-a'),B=document.getElementById('lamp-b'),C=document.getElementById('lamp-c');
   [A,B,C].forEach(l=>l.classList.remove('on'));
   const say=document.getElementById('gate-say');
-  at(350,()=>A.classList.add('on'));
-  at(1500,()=>{A.classList.remove('on');B.classList.add('on');
+  at(500,()=>A.classList.add('on'));
+  at(2600,()=>{A.classList.remove('on');B.classList.add('on');
     say.innerHTML='本次检索到 <b>两个互斥根因</b>，代码判定证据冲突 —— <span class="hi">直接拒答、转人审</span>。'});
-  at(3400,()=>{B.classList.remove('on');C.classList.add('on');
+  at(5600,()=>{B.classList.remove('on');C.classList.add('on');
     const h=SNAP&&SNAP.halluc;
     say.innerHTML=`再故意让模型幻觉出一个本体里不存在的根因 <b>『${h?h.cause:'等离子喷涂枪老化'}』</b> —— <span class="hi">当场拦截，不下发任何动作</span>。`});
 };
@@ -685,7 +685,7 @@ ANIM.ladder=()=>{
       <div class="bar" style="height:0"></div>
       <div class="lb">${s.b}<br>${s.s}</div>`;
     box.appendChild(d);
-    at(300+i*430,()=>{
+    at(400+i*800,()=>{
       d.classList.add('in');
       d.querySelector('.bar').style.height=s.h+'%';
       const who=document.getElementById('g-who');
@@ -707,10 +707,10 @@ ANIM.vs=()=>{
   const a=C['对照组_纯LLM直批']||{},b=C['实验组_三态gate']||{};
   const a1=a['无效下发_无机制发现']??3, a2=a['halluc_exec']??1;
   const b1=b['无效下发_无机制发现']??0, b2=b['halluc_exec']??0;
-  at(300,()=>countTo(document.getElementById('v-a1'),a1,700,n=>n));
-  at(700,()=>countTo(document.getElementById('v-a2'),a2,600,n=>n));
-  at(1700,()=>countTo(document.getElementById('v-b1'),b1,700,n=>n));
-  at(2100,()=>countTo(document.getElementById('v-b2'),b2,600,n=>n));
+  at(400,()=>countTo(document.getElementById('v-a1'),a1,900,n=>n));
+  at(1100,()=>countTo(document.getElementById('v-a2'),a2,800,n=>n));
+  at(2800,()=>countTo(document.getElementById('v-b1'),b1,900,n=>n));
+  at(3500,()=>countTo(document.getElementById('v-b2'),b2,800,n=>n));
 };
 
 /* ============ 载入数据 ============ */
