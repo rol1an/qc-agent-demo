@@ -149,10 +149,15 @@ body{
 .bar-row{display:flex;align-items:center;gap:calc(var(--u)*1.2);font-size:calc(var(--u)*1.35)}
 .bar-row .bl{width:17ch;flex:none;color:var(--ink2);text-align:right}
 .bar-row.win .bl{color:var(--ink);font-weight:600}
-.bar-row .bt{flex:1;height:calc(var(--u)*1.9);background:rgba(30,61,143,.07);border-radius:calc(var(--u)*.25);overflow:hidden}
-.bar-row .bf{height:100%;width:0;background:var(--lineH);transition:width .8s cubic-bezier(.2,.8,.2,1)}
-.bar-row.win .bf{background:var(--ok)}
-.bar-row .bn{width:6ch;flex:none;font-family:var(--mono);font-weight:600}
+.bar-row .bt{flex:1;height:calc(var(--u)*2.3);background:rgba(23,35,59,.06);border:1px solid var(--lineH);
+  border-radius:calc(var(--u)*.25);overflow:hidden;position:relative}
+/* 25/50/75% 参考刻度，让长度差可读而不只是"两根条" */
+.bar-row .bt::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0 calc(25% - 1px),rgba(23,35,59,.13) calc(25% - 1px) 25%)}
+.bar-row .bf{height:100%;width:0;background:var(--stamp);opacity:.85;
+  transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.bar-row.win .bf{background:var(--ok);opacity:1}
+.bar-row .bn{width:6ch;flex:none;font-family:var(--mono);font-weight:600;color:var(--stamp)}
 .bar-row.win .bn{color:var(--ok)}
 
 /* ============ 证据图 ============ */
