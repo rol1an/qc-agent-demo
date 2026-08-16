@@ -111,6 +111,41 @@ body{
 .tri-in{transform-box:fill-box;transform-origin:50% 100%;animation:triIn .38s cubic-bezier(.2,1.4,.4,1) both}
 @keyframes triIn{from{opacity:0;transform:translateY(-30%) scale(.4)}to{opacity:1;transform:none}}
 
+/* ============ 双层检索：多跳路径 ============ */
+.paths{flex:1;min-height:0;display:flex;flex-direction:column;gap:calc(var(--u)*2.2);justify-content:center}
+.pblock{border-left:calc(var(--u)*.3) solid var(--lineH);padding-left:calc(var(--u)*1.6)}
+.ph{font-size:calc(var(--u)*1.45);color:var(--ink2);margin-bottom:calc(var(--u)*1.1)}
+.ph b{color:var(--ink)}
+.lv{display:inline-block;font-family:var(--mono);font-size:calc(var(--u)*1.2);font-weight:600;
+  padding:calc(var(--u)*.15) calc(var(--u)*.8);border-radius:calc(var(--u)*.25);margin-right:calc(var(--u)*.9);color:#fff}
+.lv.low{background:var(--blue)} .lv.high{background:var(--hold)}
+.hops{display:flex;align-items:center;flex-wrap:wrap;gap:calc(var(--u)*.5) 0;min-height:calc(var(--u)*4)}
+.hops .row{display:flex;align-items:center;flex-wrap:wrap;width:100%}
+.hop{font-size:calc(var(--u)*1.5);font-weight:600;padding:calc(var(--u)*.45) calc(var(--u)*1);
+  border:1px solid var(--lineH);border-radius:calc(var(--u)*.35);background:var(--paper2);white-space:nowrap;
+  opacity:0;transform:translateX(calc(var(--u)*-1));transition:opacity .3s,transform .3s}
+.hop.in{opacity:1;transform:none}
+.hop.root{border-color:var(--blue);color:var(--blue)}
+.hop.term{border-color:var(--ok);color:var(--ok)}
+.rel{font-family:var(--mono);font-size:calc(var(--u)*1.1);color:var(--ink2);white-space:nowrap;
+  padding:0 calc(var(--u)*.55);opacity:0;transition:opacity .3s}
+.rel.in{opacity:1}
+.rel::before{content:'—'} .rel::after{content:'→'}
+.pv{font-size:calc(var(--u)*1.5);font-weight:600;color:var(--ok);margin-top:calc(var(--u)*.9);
+  opacity:0;transition:opacity .4s}
+.pv.bad{color:var(--stamp)} .pv.in{opacity:1}
+
+/* ============ 企业图对照条 ============ */
+.bars{display:flex;flex-direction:column;gap:calc(var(--u)*.75);margin-top:calc(var(--u)*.6)}
+.bar-row{display:flex;align-items:center;gap:calc(var(--u)*1.2);font-size:calc(var(--u)*1.35)}
+.bar-row .bl{width:17ch;flex:none;color:var(--ink2);text-align:right}
+.bar-row.win .bl{color:var(--ink);font-weight:600}
+.bar-row .bt{flex:1;height:calc(var(--u)*1.9);background:rgba(30,61,143,.07);border-radius:calc(var(--u)*.25);overflow:hidden}
+.bar-row .bf{height:100%;width:0;background:var(--lineH);transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.bar-row.win .bf{background:var(--ok)}
+.bar-row .bn{width:6ch;flex:none;font-family:var(--mono);font-weight:600}
+.bar-row.win .bn{color:var(--ok)}
+
 /* ============ 证据图 ============ */
 #graph{flex:1;min-height:0;width:100%}
 .gnode circle{transition:opacity .4s,r .4s}
@@ -234,13 +269,37 @@ body{
     <span>连续 9 点同侧、连续 6 点单调 —— 趋势刚起来就立案，不等缺陷发生</span></div>
 </section>
 
-<!-- 3 根因检索 -->
+<!-- 3 双层图检索 -->
 <section class="slide" data-anim="graph">
-  <div class="hd"><span class="no">工序 03</span><h2>根因横跨两条工艺段</h2>
-    <span class="note">双层图检索 · 结论可回溯到具体节点</span></div>
-  <svg id="graph" viewBox="0 0 1000 380"></svg>
-  <div class="foot"><span>从终端质量特性反查上游，一次遍历把两条链都带出来</span>
-    <span class="mono">这正是向量检索容易漏的全局关联</span></div>
+  <div class="hd"><span class="no">工序 03</span><h2>双层图检索：换起点，也换方向</h2>
+    <span class="note">每一跳都带关系类型 · 结论可逐跳回溯</span></div>
+  <div class="paths">
+    <div class="pblock">
+      <div class="ph"><span class="lv low">低层</span>常规告警 —— 从出事的传感器<b>正向</b>查本工序因果链</div>
+      <div class="hops" id="hops-low"></div>
+      <div class="pv" id="pv-low">路径唯一、证据自洽 → 可以下结论</div>
+    </div>
+    <div class="pblock">
+      <div class="ph"><span class="lv high">高层</span>严重失效 —— 从终端质量特性<b>反向</b>查跨工艺段的上游</div>
+      <div class="hops" id="hops-high"></div>
+      <div class="pv bad" id="pv-high">分叉出两个互斥根因 → 代码判定证据冲突，转人审</div>
+    </div>
+  </div>
+  <div class="foot"><span><b>这是向量检索做不到的</b>：它按文本相似度召回单点，接不上"腔体温度 → 沉积速率漂移 → 膜厚超差"这种带类型的多跳因果</span></div>
+</section>
+
+<!-- 3b 企业真实图上的验证 -->
+<section class="slide" data-anim="serres">
+  <div class="hd"><span class="no">工序 03b</span><h2>同一套检索，跑在企业真实设备图上</h2>
+    <span class="note">赛力斯设备场景闭环脱敏数据包</span></div>
+  <div class="figs">
+    <div class="fig"><div class="n" id="s-nodes">0</div><div class="k">节点 · 设备类别 / 实例 / 功能 / 失效模式 / 工单</div></div>
+    <div class="fig"><div class="n" id="s-edges">0</div><div class="k">边</div></div>
+    <div class="fig"><div class="n ok" id="s-median">0</div><div class="k">候选中位 · 从 1287 条失效模式收敛</div></div>
+  </div>
+  <div class="bars" id="bars"></div>
+  <div class="claim" style="margin-top:calc(var(--u)*1)">同一批工单、同一张图，<b>只改检索后的过滤策略</b> —— <span class="hi">信结构，不信标签</span>。</div>
+  <div class="foot"><span>结构关系被流程强制维护、外键完整率 100%；属性标注由不同环节在不同时间填写，抽象层不一致</span></div>
 </section>
 
 <!-- 4 三态裁决 -->
@@ -444,47 +503,59 @@ ANIM.chart=()=>{
   timers.push(setTimeout(()=>{clearInterval(iv);if(drawn<N)render(N)},DUR+400));
 };
 
-/* ---- 证据图逐节点点亮 ---- */
+/* ---- 双层检索：逐跳点亮，关系类型跟着出 ---- */
 ANIM.graph=()=>{
   clearTimers();
-  const svg=document.getElementById('graph');svg.innerHTML='';
   if(!SNAP)return;
-  const ev=(SNAP.events||[]).find(e=>e.retrieval&&e.retrieval.level==='high')||SNAP.events[0];
-  const g=ev.retrieval.graph, NS='http://www.w3.org/2000/svg';
-  const LAYER={sensor_cluster:0,process:1,kcc:2,mechanism:3,mode:4,kpc:5,disposition:6,case:7};
-  const COLOR={kpc:'#B23A2F',mode:'#B26E00',mechanism:'#7C4DBE',kcc:'#1E3D8F',
-               process:'#51607A',disposition:'#0E8A4C',sensor_cluster:'#51607A',case:'#0F7F8C'};
-  const byL={};
-  g.nodes.forEach(n=>{const l=LAYER[n.type]??3;(byL[l]=byL[l]||[]).push(n)});
-  const Ls=Object.keys(byL).map(Number).sort((a,b)=>a-b);
-  const W=1000,H=380, pos={};
-  Ls.forEach((l,li)=>{
-    const col=byL[l], cx=70+li*(W-140)/Math.max(1,Ls.length-1);
-    col.forEach((n,ni)=>{pos[n.id]={x:cx,y:H/2+(ni-(col.length-1)/2)*76,t:n.type}});
+  const evs=SNAP.events||[];
+  const pick=lv=>evs.find(e=>e.retrieval&&e.retrieval.level===lv);
+  const relMap=ev=>{const m={};(ev.retrieval.graph.edges||[]).forEach(e=>{
+    m[e.s+'\u0000'+e.t]=e.rel;m[e.t+'\u0000'+e.s]=e.rel});return m};
+
+  let delay=250;
+  ['low','high'].forEach(lv=>{
+    const ev=pick(lv), box=document.getElementById('hops-'+lv), verdict=document.getElementById('pv-'+lv);
+    box.innerHTML=''; verdict.classList.remove('in');
+    if(!ev)return;
+    const m=relMap(ev);
+    ev.retrieval.evidence_paths.forEach(path=>{
+      const row=document.createElement('div'); row.className='row'; box.appendChild(row);
+      path.forEach((n,i)=>{
+        if(i){
+          const r=document.createElement('span'); r.className='rel';
+          r.textContent=m[path[i-1]+'\u0000'+n]||'关联'; row.appendChild(r);
+          at(delay,()=>r.classList.add('in')); delay+=180;
+        }
+        const h=document.createElement('span');
+        h.className='hop'+(i===0?' root':i===path.length-1?' term':'');
+        h.textContent=n; row.appendChild(h);
+        at(delay,()=>h.classList.add('in')); delay+=180;
+      });
+      delay+=120;
+    });
+    at(delay,()=>verdict.classList.add('in')); delay+=420;
   });
-  // 边
-  const edges=(g.edges||[]);
-  edges.forEach((e,i)=>{
-    const a=pos[e.s],b=pos[e.t];
-    if(!a||!b)return;
-    const l=document.createElementNS(NS,'line');
-    l.setAttribute('x1',a.x);l.setAttribute('y1',a.y);l.setAttribute('x2',b.x);l.setAttribute('y2',b.y);
-    l.setAttribute('stroke','var(--lineH)');l.setAttribute('stroke-width',1.8);l.setAttribute('opacity',0);
-    svg.appendChild(l);
-    at(300+i*110,()=>{l.style.transition='opacity .4s';l.setAttribute('opacity',.9)});
-  });
-  // 节点
-  g.nodes.forEach((n,i)=>{
-    const p=pos[n.id],gr=document.createElementNS(NS,'g');
-    gr.setAttribute('class','gnode');gr.setAttribute('opacity',0);
-    const c=document.createElementNS(NS,'circle');
-    c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);c.setAttribute('r',n.root?13:9);
-    c.setAttribute('fill',COLOR[n.type]||'#51607A');
-    const t=document.createElementNS(NS,'text');
-    t.setAttribute('x',p.x);t.setAttribute('y',p.y-19);t.setAttribute('text-anchor','middle');
-    t.textContent=n.id;
-    gr.appendChild(c);gr.appendChild(t);svg.appendChild(gr);
-    at(240+i*150,()=>{gr.style.transition='opacity .45s';gr.setAttribute('opacity',1)});
+};
+
+/* ---- 企业真实图：规模 + 只改过滤策略的对照 ---- */
+ANIM.serres=()=>{
+  clearTimers();
+  countTo(document.getElementById('s-nodes'),12327,1200);
+  countTo(document.getElementById('s-edges'),11750,1200);
+  countTo(document.getElementById('s-median'),3,900,n=>n+' 条');
+  const ROWS=[
+    {k:'只用结构可达',v:87.3,win:true},
+    {k:'再按部件族过滤',v:31.0},
+    {k:'再按现象类别过滤',v:11.3},
+    {k:'再按完整度 A 过滤',v:1.4},
+  ];
+  const box=document.getElementById('bars'); box.innerHTML='';
+  ROWS.forEach((r,i)=>{
+    const d=document.createElement('div');
+    d.className='bar-row'+(r.win?' win':'');
+    d.innerHTML=`<span class="bl">${r.k}</span><span class="bt"><span class="bf"></span></span><span class="bn">${r.v}%</span>`;
+    box.appendChild(d);
+    at(400+i*260,()=>d.querySelector('.bf').style.width=r.v+'%');
   });
 };
 
