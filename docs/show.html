@@ -135,6 +135,15 @@ body{
   opacity:0;transition:opacity .4s}
 .pv.bad{color:var(--stamp)} .pv.in{opacity:1}
 
+/* ============ 企业设备知识图 ============ */
+#kg{flex:1;min-height:0;width:100%}
+#kg .ttl{font-family:var(--sans);font-size:calc(var(--u)*1.3);font-weight:600;fill:var(--ink)}
+#kg .cnt{font-family:var(--mono);font-size:calc(var(--u)*1.15);fill:var(--ink2)}
+#kg .krel{font-family:var(--mono);font-size:calc(var(--u)*1.05);fill:var(--ink2)}
+.kgcap{font-size:calc(var(--u)*1.6);margin-top:calc(var(--u)*.8);min-height:calc(var(--u)*2.6);
+  opacity:0;transition:opacity .45s}
+.kgcap.in{opacity:1} .kgcap b{color:var(--ok);font-weight:600}
+
 /* ============ 企业图对照条 ============ */
 .bars{display:flex;flex-direction:column;gap:calc(var(--u)*.75);margin-top:calc(var(--u)*.6)}
 .bar-row{display:flex;align-items:center;gap:calc(var(--u)*1.2);font-size:calc(var(--u)*1.35)}
@@ -291,15 +300,20 @@ body{
 <!-- 3b 企业真实图上的验证 -->
 <section class="slide" data-anim="serres">
   <div class="hd"><span class="no">工序 03b</span><h2>同一套检索，跑在企业真实设备图上</h2>
-    <span class="note">数据来源：赛力斯脱敏数据包（非公开数据集）</span></div>
-  <div class="figs">
-    <div class="fig"><div class="n" id="s-nodes">0</div><div class="k">节点 · 设备类别 / 实例 / 功能 / 失效模式 / 工单</div></div>
-    <div class="fig"><div class="n" id="s-edges">0</div><div class="k">边</div></div>
-    <div class="fig"><div class="n ok" id="s-median">0</div><div class="k">候选中位 · 从 1287 条失效模式收敛</div></div>
-  </div>
+    <span class="note" id="s-scale">数据来源：赛力斯脱敏数据包（非公开数据集）</span></div>
+  <svg id="kg" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid meet"></svg>
+  <div class="kgcap" id="kgcap">&nbsp;</div>
+  <div class="foot"><span>五类对象的外键完整率 100%，结构被流程强制维护 —— 所以检索敢完全靠它走</span></div>
+</section>
+
+<!-- 3c 只改过滤策略的对照 -->
+<section class="slide" data-anim="bars">
+  <div class="hd"><span class="no">工序 03c</span><h2>信结构，不信标签</h2>
+    <span class="note">同一批工单、同一张图，只改过滤策略</span></div>
   <div class="bars" id="bars"></div>
-  <div class="claim" style="margin-top:calc(var(--u)*1)">同一批工单、同一张图，<b>只改检索后的过滤策略</b> —— <span class="hi">信结构，不信标签</span>。</div>
-  <div class="foot"><span>结构关系被流程强制维护、外键完整率 100%；属性标注由不同环节在不同时间填写，抽象层不一致</span></div>
+  <div class="claim" style="margin-top:calc(var(--u)*1.6)">任何属性硬过滤都在<b>损害</b>召回 —— <span class="hi">结构本身已经足够</span>。</div>
+  <div class="foot"><span>现场记录的属性与知识库归类的属性处在不同抽象层，按字段相等匹配必然把正确答案滤掉</span>
+    <span class="mono">这条原则决定了架构：图管结构收敛，语义判断交给模型或人</span></div>
 </section>
 
 <!-- 4 三态裁决 -->
@@ -537,12 +551,78 @@ ANIM.graph=()=>{
   });
 };
 
-/* ---- 企业真实图：规模 + 只改过滤策略的对照 ---- */
+/* ---- 企业真实设备图：五类节点云 + 一条工单走四跳 ---- */
 ANIM.serres=()=>{
   clearTimers();
-  countTo(document.getElementById('s-nodes'),12327,1200);
-  countTo(document.getElementById('s-edges'),11750,1200);
-  countTo(document.getElementById('s-median'),3,900,n=>n+' 条');
+  const svg=document.getElementById('kg'); svg.innerHTML='';
+  const cap=document.getElementById('kgcap'); cap.classList.remove('in');
+  const NS='http://www.w3.org/2000/svg';
+  const mk=(n,a)=>{const el=document.createElementNS(NS,n);for(const k in a)el.setAttribute(k,a[k]);return el};
+
+  // 五类对象与真实规模（build_kg 的统计，见 serres_eval.json 图规模）
+  const COLS=[
+    {t:'故障工单',      n:406,  c:'#B23A2F', dots:12, rel:'报修于'},
+    {t:'设备实例',      n:9673, c:'#51607A', dots:30, rel:'属于'},
+    {t:'设备类别',      n:625,  c:'#1E3D8F', dots:16, rel:'具备'},
+    {t:'设备功能',      n:336,  c:'#7C4DBE', dots:12, rel:'可能失效为'},
+    {t:'失效模式',      n:1287, c:'#B26E00', dots:20, rel:''},
+  ];
+  const W=1000,H=400, top=64, botPad=34;
+  const cx=i=>82+i*(W-164)/(COLS.length-1);
+  const pos=[];   // pos[列][点] = {x,y}
+
+  COLS.forEach((c,i)=>{
+    svg.appendChild(Object.assign(mk('text',{x:cx(i),y:26,'text-anchor':'middle','class':'ttl'}),{textContent:c.t}));
+    svg.appendChild(Object.assign(mk('text',{x:cx(i),y:46,'text-anchor':'middle','class':'cnt'}),
+      {textContent:c.n.toLocaleString()+' 个节点'}));
+    // 点云：列内按网格铺开，数量是示意，标注是真值
+    const per=4, rows=Math.ceil(c.dots/per), gapY=(H-top-botPad)/Math.max(rows,1), gapX=17;
+    pos[i]=[];
+    for(let k=0;k<c.dots;k++){
+      const r=Math.floor(k/per), col=k%per;
+      const x=cx(i)+(col-(per-1)/2)*gapX, y=top+gapY*(r+.5);
+      const d=mk('circle',{cx:x,cy:y,r:3.6,fill:c.c,opacity:.2});
+      svg.appendChild(d); pos[i].push({x,y,el:d});
+    }
+    if(c.rel){
+      svg.appendChild(Object.assign(mk('text',{x:(cx(i)+cx(i+1))/2,y:H-12,'text-anchor':'middle','class':'krel'}),
+        {textContent:'—'+c.rel+'→'}));
+    }
+  });
+
+  // 遍历：工单1 → 实例1 → 类别1 → 功能2 → 失效模式3（retrieve() 的真实走法）
+  const PATH=[[6],[13],[7],[4,9],[3,10,16]];
+  const light=(i,idx,big)=>{const d=pos[i][idx];d.el.setAttribute('opacity',1);
+    d.el.setAttribute('r',big?6.4:5.2);
+    d.el.style.transition='opacity .3s,r .3s';return d};
+  const edge=(a,b,color)=>{
+    const l=mk('path',{d:`M${a.x} ${a.y} C${(a.x+b.x)/2} ${a.y},${(a.x+b.x)/2} ${b.y},${b.x} ${b.y}`,
+      fill:'none',stroke:color,'stroke-width':1.8,opacity:0});
+    svg.appendChild(l); requestAnimationFrame(()=>{l.style.transition='opacity .35s';l.setAttribute('opacity',.85)});
+    setTimeout(()=>l.setAttribute('opacity',.85),40);
+  };
+
+  let d=380;
+  PATH.forEach((idxs,i)=>{
+    at(d,()=>{
+      idxs.forEach(k=>{
+        const cur=light(i,k,i===0||i===PATH.length-1);
+        if(i){PATH[i-1].forEach(pk=>edge(pos[i-1][pk],cur,COLS[i].c))}
+      });
+    });
+    d+=520;
+  });
+  at(d+150,()=>{
+    cap.innerHTML='一条故障工单进来，沿结构走四跳 —— 从 1287 条失效模式收敛到 <b>中位 3 条候选</b>，'+
+                  '正确答案落在其中的比例 <b>87.3%</b>';
+    cap.classList.add('in');
+  });
+  document.getElementById('s-scale').textContent='12327 节点 / 11750 边 · 赛力斯脱敏数据包';
+};
+
+/* ---- 只改过滤策略的对照 ---- */
+ANIM.bars=()=>{
+  clearTimers();
   const ROWS=[
     {k:'只用结构可达',v:87.3,win:true},
     {k:'再按部件族过滤',v:31.0},
@@ -555,7 +635,7 @@ ANIM.serres=()=>{
     d.className='bar-row'+(r.win?' win':'');
     d.innerHTML=`<span class="bl">${r.k}</span><span class="bt"><span class="bf"></span></span><span class="bn">${r.v}%</span>`;
     box.appendChild(d);
-    at(400+i*260,()=>d.querySelector('.bf').style.width=r.v+'%');
+    at(350+i*300,()=>d.querySelector('.bf').style.width=r.v+'%');
   });
 };
 
