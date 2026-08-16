@@ -235,7 +235,7 @@ body{
 <!-- 1 原始数据 -->
 <section class="slide" data-anim="raw">
   <div class="hd"><span class="no">工序 01</span><h2>数据不是编的</h2>
-    <span class="note">UCI SECOM · 任何人可下载核对</span></div>
+    <span class="note">时序侧 · UCI SECOM 公开数据集</span></div>
   <div class="rawwrap">
     <div class="rawbox">
       <div class="cap"><span class="dot"></span><span id="rawcap">读取 data/secom.data …</span></div>
@@ -248,8 +248,8 @@ body{
       <div class="item"><div class="n" style="font-size:calc(var(--u)*1.9)" id="f-span">—</div><div class="k">时间跨度</div></div>
     </div>
   </div>
-  <div class="foot"><span>左侧是原始文件里逐字节读出的真实数值</span>
-    <span class="mono">NaN = 原始缺失，未做美化</span></div>
+  <div class="foot"><span>左侧是原始文件里逐字节读出的真实数值，NaN 是原始缺失、未做美化</span>
+    <span class="mono">企业脱敏包不含时序信号，故时序侧用公开数据；知识侧跑企业真实数据，见工序 03b</span></div>
 </section>
 
 <!-- 2 过程监控 -->
@@ -291,7 +291,7 @@ body{
 <!-- 3b 企业真实图上的验证 -->
 <section class="slide" data-anim="serres">
   <div class="hd"><span class="no">工序 03b</span><h2>同一套检索，跑在企业真实设备图上</h2>
-    <span class="note">赛力斯设备场景闭环脱敏数据包</span></div>
+    <span class="note">数据来源：赛力斯脱敏数据包（非公开数据集）</span></div>
   <div class="figs">
     <div class="fig"><div class="n" id="s-nodes">0</div><div class="k">节点 · 设备类别 / 实例 / 功能 / 失效模式 / 工单</div></div>
     <div class="fig"><div class="n" id="s-edges">0</div><div class="k">边</div></div>
